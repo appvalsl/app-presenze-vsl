@@ -1,33 +1,56 @@
-<!DOCTYPE html>
-<html lang="it">
+<!DOCTYPE html><="it">
 <head>
-:960px){  <meta charset="UTF-8" />
-      .grid-2{
-        grid-template-columns:1fr;
-      }
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Presenze | Auth + Database</title>
+  <meta name="theme-color" content="#111827" />
+
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <header class="app-header">
-    <div class="app-title">Inserimento Presenze</div>
-    <div class="app-subtitle">Login</div>
+    <div>
+      <div class="app-title">Inserimento Presenze</div>
+      <div class="app-subtitle" id="subtitle">Login</div>
+    </div>
+
+    <div class="header-actions">
+      <span class="badge" id="statusBadge">—</span>
+      <button id="btnLogout" class="btn btn-secondary hidden" type="button">Logout</button>
+    </div>
   </header>
 
   <main class="container">
-    <section class="card">
+    <!-- LOGIN -->
+    <section id="authSection" class="card">
       <h2>Accesso utenti</h2>
-      <p class="muted">Test minimale del click sul pulsante login.</p>
+      <p class="muted">
+        Solo utenti autorizzati possono entrare nella sequenza di caricamento presenze.
+      </p>
 
       <div class="grid grid-2">
         <label class="field">
           <span>Email</span>
-          <input id="loginEmail" type="email" placeholder="nome@azienda.it" />
+          <input
+            id="loginEmail"
+            type="email"
+            placeholder="nome@azienda.it"
+            autocomplete="username"
+          />
         </label>
 
         <label class="field">
           <span>Password</span>
-          <input id="loginPassword" type="password" placeholder="Password" />
+          <input
+            id="loginPassword"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+          />
         </label>
       </div>
 
@@ -35,148 +58,186 @@
         <button id="btnLogin" class="btn btn-primary" type="button">Accedi</button>
       </div>
 
-      <div id="authErrors" class="errors"></div>
+      <div id="authErrors" class="errors hidden"></div>
+
+      <p class="muted">
+        Gli utenti vanno creati manualmente da Supabase Authentication &gt; Users.
+        Nell'app c'è solo il login.
+      </p>
+    </section>
+
+    <!-- SETUP -->
+    <section id="setupSection" class="card hidden">
+      <div class="wizard-head">
+        <div>
+          <h2>Setup giornata</h2>
+        </div>
+        <div class="badge" id="wizardStepBadge">Step 1/3</div>
+      </div>
+
+      <div class="wizard-progress">
+        <div id="wizardProgressBar" class="wizard-progress-bar" style="width:33.33%;"></div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div id="step1" class="wizard-step">
+        <div class="wizard-panel">
+          <label class="field">
+            <span>Linea di produzione</span>
+            <select id="line"></select>
+          </label>
+          <div class="wizard-hint">Step 1 di 3 — Scegli una linea.</div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div id="step2" class="wizard-step hidden">
+        <div class="wizard-panel">
+          <div class="grid grid-2">
+            <label class="field">
+              <span>Data</span>
+              <input id="date" type="date" />
+            </label>
+
+            <label class="field">
+              <span>Nota fermi</span>
+              <textarea id="stopsNote" placeholder="Opzionale"></textarea>
+            </label>
+          </div>
+
+          <div class="grid grid-2 setup-quick-grid">
+            <div class="field-block">
+              <label class="field">
+                <span>Inizio</span>
+                <input id="startTime" type="time" />
+              </label>
+              <div class="quick-buttons" data-target="startTime">
+                <button type="button" data-value="07:30">07:30</button>
+                <button type="button" data-value="08:00">08:00</button>
+                <button type="button" data-value="08:30">08:30</button>
+              </div>
+            </div>
+
+            <div class="field-block">
+              <label class="field">
+                <span>Fine</span>
+                <input id="endTime" type="time" />
+              </label>
+              <div class="quick-buttons" data-target="endTime">
+                <button type="button" data-value="15:00">15:00</button>
+                <button type="button" data-value="17:00">17:00</button>
+                <button type="button" data-value="17:30">17:30</button>
+                <button type="button" data-value="18:00">18:00</button>
+              </div>
+            </div>
+
+            <div class="field-block">
+              <label class="field">
+                <span>Pausa pranzo (min)</span>
+                <input id="lunchMin" type="number" min="0" value="60" />
+              </label>
+              <div class="quick-buttons" data-target="lunchMin">
+                <button type="button" data-value="0">0m</button>
+                <button type="button" data-value="15">15m</button>
+                <button type="button" data-value="30">30m</button>
+                <button type="button" data-value="45">45m</button>
+                <button type="button" data-value="60">60m</button>
+              </div>
+            </div>
+
+            <div class="field-block">
+              <label class="field">
+                <span>Pausa snack (min)</span>
+                <input id="snackMin" type="number" min="0" value="10" />
+              </label>
+              <div class="quick-buttons" data-target="snackMin">
+                <button type="button" data-value="0">0m</button>
+                <button type="button" data-value="10">10m</button>
+                <button type="button" data-value="15">15m</button>
+              </div>
+              <div class="field-help">Di prassi 10 minuti.</div>
+            </div>
+
+            <div class="field-block">
+              <label class="field">
+                <span>Fermi (min)</span>
+                <input id="stopsMin" type="number" min="0" value="0" />
+              </label>
+              <div class="quick-buttons" data-target="stopsMin">
+                <button type="button" data-value="0">0m</button>
+                <button type="button" data-value="5">5m</button>
+                <button type="button" data-value="10">10m</button>
+                <button type="button" data-value="15">15m</button>
+                <button type="button" data-value="30">30m</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-hint">Step 2 di 3 — Inserisci i dati della giornata.</div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div id="step3" class="wizard-step hidden">
+        <div class="wizard-panel">
+          <div class="setup-review" id="setupReview">Nessun dato disponibile.</div>
+          <div class="wizard-hint">
+            Step 3 di 3 — Controlla il riepilogo e carica gli operatori della linea.
+          </div>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <button id="btnPrevStep" class="btn btn-secondary hidden" type="button">← Indietro</button>
+        <button id="btnNextStep" class="btn btn-primary" type="button">Avanti →</button>
+        <button id="btnLoadRows" class="btn btn-success hidden" type="button">Carica operatori della linea</button>
+      </div>
+
+      <div id="setupErrors" class="errors hidden"></div>
+    </section>
+
+    <!-- RIGHE -->
+    <section id="rowsSection" class="card hidden">
+      <div class="section-head">
+        <div>
+          <h2>Presenze</h2>
+          <div id="setupSummary" class="muted"></div>
+        </div>
+        <div class="badge" id="rowsCount">Righe: 0</div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Operatore</th>
+              <th>Ore std</th>
+              <th>Ore lavorate (h)</th>
+              <th>Evento min</th>
+              <th>Assemblea min</th>
+              <th>Sciopero min</th>
+              <th>Postazione</th>
+              <th>Finali</th>
+            </tr>
+          </thead>
+          <tbody id="rowsBody"></tbody>
+        </table>
+      </div>
+
+      <div class="toolbar">
+        <button id="btnSaveDb" class="btn btn-success" type="button">Salva nel database</button>
+        <button id="btnBackSetup" class="btn btn-secondary" type="button">Torna al setup</button>
+      </div>
+
+      <div id="rowsErrors" class="errors hidden"></div>
     </section>
   </main>
 
-  <script type="module" src="./js/app.js?v=debug1"></script>
+  <div id="loading" class="loading hidden">
+    <div class="loading-box">Operazione in corso…</div>
+  </div>
+
+  <script src="./js/config.js"></script>
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Test Login</title>
-  <meta name="theme-color" content="#111827" />
-  <style>
-    :root{
-      --bg:#f5f6f8;
-      --card:#ffffff;
-      --text:#111827;
-      --muted:#6b7280;
-      --primary:#4368e0;
-      --primary-hover:#3557c7;
-      --border:#e5e7eb;
-      --header:#111827;
-    }
-
-    *{
-      box-sizing:border-box;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-    }
-
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-    }
-
-    .app-header{
-      padding:14px 16px;
-      background:var(--header);
-      color:#fff;
-    }
-
-    .app-title{
-      font-size:20px;
-      font-weight:800;
-    }
-
-    .app-subtitle{
-      font-size:12px;
-      color:#cbd5e1;
-      margin-top:2px;
-    }
-
-    .container{
-      max-width:1000px;
-      margin:0 auto;
-      padding:24px;
-    }
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:24px;
-      margin-top:24px;
-      box-shadow:0 10px 25px rgba(0,0,0,.05);
-    }
-
-    h2{
-      margin:0 0 12px 0;
-      font-size:22px;
-      font-weight:800;
-    }
-
-    .muted{
-      font-size:13px;
-      color:var(--muted);
-    }
-
-    .grid{
-      display:grid;
-      gap:14px;
-    }
-
-    .grid-2{
-      grid-template-columns:repeat(2,minmax(0,1fr));
-    }
-
-    .field{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      margin-top:14px;
-    }
-
-    .field span{
-      font-size:14px;
-      font-weight:700;
-    }
-
-    input{
-      width:100%;
-      padding:14px 16px;
-      border:1px solid var(--border);
-      border-radius:14px;
-      background:#fff;
-      font-size:16px;
-      outline:none;
-    }
-
-    .toolbar{
-      margin-top:18px;
-    }
-
-    .btn{
-      border:none;
-      border-radius:16px;
-      padding:16px 18px;
-      cursor:pointer;
-      font-weight:800;
-      font-size:16px;
-      min-height:58px;
-    }
-
-    .btn-primary{
-      background:var(--primary);
-      color:#fff;
-    }
-
-    .btn-primary:hover{
-      background:var(--primary-hover);
-    }
-
-    .errors{
-      margin-top:14px;
-      border:1px solid rgba(220,38,38,.25);
-      background:rgba(220,38,38,.06);
-      color:#7f1d1d;
-      border-radius:12px;
-      padding:12px 14px;
-      font-size:13px;
-      display:none;
-    }
-
-    .errors.show{
-      display:block;
-    }
-

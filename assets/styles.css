@@ -1,11 +1,5 @@
 :root{
-  --bg:#f5f6f8;
-  --card:#ffffff;
-  --text:#111827;
-  --muted:#6b7280;
-  --primary:#4368e0;
-  --primary-hover:#3557c7;
-  --success:#3ea74f;
+  --bg:#f5  --success:#3ea74f;  --bg:#f5f6f8;
   --success-hover:#2d8d3d;
   --border:#e5e7eb;
   --header:#111827;
@@ -269,7 +263,6 @@ td select{
   font-weight:700;
 }
 
-/* Wizard */
 .wizard-head{
   display:flex;
   justify-content:space-between;
@@ -351,7 +344,6 @@ td select{
   flex:1;
 }
 
-/* Quick buttons */
 .setup-quick-grid{
   margin-top:14px;
 }
@@ -436,3 +428,8 @@ td select{
     min-width:auto;
   }
 }
+  --card:#ffffff;
+  --text:#111827;
+  --muted:#6b7280;
+  --primary:#4368e0;
+  --primary-hover:#3557c7;

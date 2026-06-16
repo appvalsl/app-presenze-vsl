@@ -1,6 +1,70 @@
 <!DOCTYPE html>
 <html lang="it">
-<head>
+<head ← Indietro<head>
+        </button>
+
+        <button id="btnNextStep" class="btn btn-primary" type="button">
+          Avanti →
+        </button>
+
+        <button id="btnLoadRows" class="btn btn-success hidden" type="button">
+          Carica operatori della linea
+        </button>
+      </div>
+
+      <div id="setupErrors" class="errors hidden"></div>
+    </section>
+
+    <section id="rowsSection" class="card hidden">
+      <div class="section-head">
+        <div>
+          <h2>Presenze</h2>
+          <div id="setupSummary" class="muted"></div>
+        </div>
+
+        <div class="badge" id="rowsCount">Righe: 0</div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Operatore</th>
+              <th>Ore std</th>
+              <th>Ore lavorate (h)</th>
+              <th>Evento min</th>
+              <th>Assemblea min</th>
+              <th>Sciopero min</th>
+              <th>Postazione</th>
+              <th>Finali</th>
+            </tr>
+          </thead>
+          <tbody id="rowsBody"></tbody>
+        </table>
+      </div>
+
+      <div class="toolbar">
+        <button id="btnSaveDb" class="btn btn-success" type="button">
+          Salva nel database
+        </button>
+
+        <button id="btnBackSetup" class="btn btn-secondary" type="button">
+          Torna al setup
+        </button>
+      </div>
+
+      <div id="rowsErrors" class="errors hidden"></div>
+    </section>
+  </main>
+
+  <div id="loading" class="loading hidden">
+    <div class="loading-box">Operazione in corso…</div>
+  </div>
+
+  <script src="./js/config.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Presenze | Auth + Database</title>
@@ -74,7 +138,6 @@
         <div id="wizardProgressBar" class="wizard-progress-bar" style="width: 33.33%;"></div>
       </div>
 
-      <!-- STEP 1 -->
       <div id="step1" class="wizard-step">
         <div class="wizard-panel">
           <label class="field">
@@ -86,7 +149,6 @@
         </div>
       </div>
 
-      <!-- STEP 2 -->
       <div id="step2" class="wizard-step hidden">
         <div class="wizard-panel">
           <div class="grid grid-2">
@@ -179,7 +241,6 @@
         </div>
       </div>
 
-      <!-- STEP 3 -->
       <div id="step3" class="wizard-step hidden">
         <div class="wizard-panel">
           <div class="setup-review" id="setupReview">
@@ -194,68 +255,3 @@
 
       <div class="wizard-nav">
         <button id="btnPrevStep" class="btn btn-secondary hidden" type="button">
-          ← Indietro
-        </button>
-
-        <button id="btnNextStep" class="btn btn-primary" type="button">
-          Avanti →
-        </button>
-
-        <button id="btnLoadRows" class="btn btn-success hidden" type="button">
-          Carica operatori della linea
-        </button>
-      </div>
-
-      <div id="setupErrors" class="errors hidden"></div>
-    </section>
-
-    <section id="rowsSection" class="card hidden">
-      <div class="section-head">
-        <div>
-          <h2>Presenze</h2>
-          <div id="setupSummary" class="muted"></div>
-        </div>
-
-        <div class="badge" id="rowsCount">Righe: 0</div>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Operatore</th>
-              <th>Ore std</th>
-              <th>Ore lavorate (h)</th>
-              <th>Evento min</th>
-              <th>Assemblea min</th>
-              <th>Sciopero min</th>
-              <th>Postazione</th>
-              <th>Finali</th>
-            </tr>
-          </thead>
-          <tbody id="rowsBody"></tbody>
-        </table>
-      </div>
-
-      <div class="toolbar">
-        <button id="btnSaveDb" class="btn btn-success" type="button">
-          Salva nel database
-        </button>
-
-        <button id="btnBackSetup" class="btn btn-secondary" type="button">
-          Torna al setup
-        </button>
-      </div>
-
-      <div id="rowsErrors" class="errors hidden"></div>
-    </section>
-  </main>
-
-  <div id="loading" class="loading hidden">
-    <div class="loading-box">Operazione in corso…</div>
-  </div>
-
-  <script src="./js/config.js"></script>
-  <script type="module" src="./js/app.js"></script>
-</body>
-</html>

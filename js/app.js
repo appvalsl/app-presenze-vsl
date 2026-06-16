@@ -382,12 +382,14 @@ function resetWizardToStep1() {
   state.currentStep = 1;
   clearErrors(els.setupErrors);
   setDefaultDateIfEmpty();
+  syncAllQuickButtons();
   renderWizard();
 }
 
 function goToStep3() {
   state.currentStep = 3;
   clearErrors(els.setupErrors);
+  syncAllQuickButtons();
   renderWizard();
 }
 
@@ -679,6 +681,63 @@ async function handleSession(session) {
   await loadOperatorsFromDb();
 }
 
+/* =========================
+   QUICK BUTTONS
+========================= */
+
+function updateQuickButtonsForInput(targetId) {
+  const group = document.querySelector(`.quick-buttons[data-target="${targetId}"]`);
+  const input = document.getElementById(targetId);
+
+  if (!group || !input) return;
+
+  const currentValue = String(input.value ?? '');
+
+  group.querySelectorAll('button').forEach((btn) => {
+    const btnValue = String(btn.dataset.value ?? '');
+    btn.classList.toggle('active', btnValue === currentValue);
+  });
+}
+
+function syncAllQuickButtons() {
+  ['startTime', 'endTime', 'lunchMin', 'snackMin', 'stopsMin'].forEach(updateQuickButtonsForInput);
+}
+
+function bindQuickButtons() {
+  document.querySelectorAll('.quick-buttons').forEach((group) => {
+    const targetId = group.dataset.target;
+    const input = document.getElementById(targetId);
+
+    if (!targetId || !input) return;
+
+    group.querySelectorAll('button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const value = btn.dataset.value ?? '';
+        input.value = value;
+
+        updateQuickButtonsForInput(targetId);
+
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    });
+  });
+
+  [els.startTime, els.endTime, els.lunchMin, els.snackMin, els.stopsMin]
+    .filter(Boolean)
+    .forEach((input) => {
+      const sync = () => updateQuickButtonsForInput(input.id);
+      input.addEventListener('input', sync);
+      input.addEventListener('change', sync);
+    });
+
+  syncAllQuickButtons();
+}
+
+/* =========================
+   EVENTS
+========================= */
+
 function bindWizardEvents() {
   els.btnNextStep?.addEventListener('click', () => {
     if (!validateWizardStep(state.currentStep)) return;
@@ -807,6 +866,7 @@ async function init() {
   renderLines();
   setDefaultDateIfEmpty();
   renderWizard();
+  bindQuickButtons();
 
   bindWizardEvents();
   bindRowsEvents();

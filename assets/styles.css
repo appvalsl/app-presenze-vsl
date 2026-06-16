@@ -5,8 +5,8 @@
   --muted:#6b7280;
   --primary:#4368e0;
   --primary-hover:#3557c7;
-  --success:#16a34a;
-  --success-hover:#15803d;
+  --success:#3ea74f;
+  --success-hover:#2d8d3d;
   --border:#e5e7eb;
   --header:#111827;
 }
@@ -84,10 +84,6 @@ h2{
 
 .grid-2{
   grid-template-columns:repeat(2,minmax(0,1fr));
-}
-
-.grid-4{
-  grid-template-columns:repeat(4,minmax(0,1fr));
 }
 
 .field{
@@ -305,14 +301,14 @@ td select{
 .wizard-panel{
   border:1px solid var(--border);
   border-radius:18px;
-  padding:16px;
+  padding:18px;
   background:#fff;
 }
 
 .wizard-hint{
   font-size:13px;
   color:var(--muted);
-  margin-top:12px;
+  margin-top:14px;
 }
 
 .wizard-nav{
@@ -337,8 +333,8 @@ td select{
 
 .setup-review-row{
   display:flex;
-  gap:10px;
-  padding:4px 0;
+  gap:12px;
+  padding:6px 0;
   border-bottom:1px dashed #e5e7eb;
 }
 
@@ -355,9 +351,54 @@ td select{
   flex:1;
 }
 
+/* Quick buttons */
+.setup-quick-grid{
+  margin-top:14px;
+}
+
+.field-block{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.quick-buttons{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:4px;
+}
+
+.quick-buttons button{
+  border:1px solid var(--border);
+  background:#fff;
+  padding:10px 12px;
+  border-radius:999px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .15s ease;
+}
+
+.quick-buttons button:hover{
+  background:#eef2ff;
+  border-color:#cfd8ff;
+}
+
+.quick-buttons button.active{
+  background:var(--primary);
+  color:#fff;
+  border-color:var(--primary);
+}
+
+.field-help{
+  font-size:13px;
+  color:var(--muted);
+  margin-top:4px;
+}
+
 @media (max-width:960px){
-  .grid-2,
-  .grid-4{
+  .grid-2{
     grid-template-columns:1fr;
   }
 

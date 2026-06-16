@@ -1,40 +1,4 @@
-import { getSupabase } from './supabase-client.js';import { getSupabase } from './supPremonta',
-    'Montaggio manuale',
-    'Calzera',
-    'Carico e grattatura strutture',
-    'Ribattitura e rimozione chiodi',
-    'Sgrossatura',
-    'Segno a dima e boetta',
-    'Cardatura fine',
-    'Incollaggio suola',
-    'Incollaggio tomaia',
-    'Suolatura',
-    'Pulizia',
-    'Inchiodatura'
-  ],
-  'RIFINITURA 1': [],
-  'RIFINITURA 2': [],
-  'MAGAZZINO SEMILAVORATI': [],
-  'MAGAZZINO SPEDIZIONI': [],
-  'CONTROLLO TOMAIA': []
-};
-
-const APP_STATE_KEY = 'presenze-app-state-v2';
-
-const els = {
-  subtitle: document.getElementById('subtitle'),
-  statusBadge: document.getElementById('statusBadge'),
-  btnLogout: document.getElementById('btnLogout'),
-
-  authSection: document.getElementById('authSection'),
-  loginEmail: document.getElementById('loginEmail'),
-  loginPassword: document.getElementById('loginPassword'),
-  btnLogin: document.getElementById('btnLogin'),
-  authErrors: document.getElementById('authErrors'),
-
-  setupSection: document.getElementById('setupSection'),
-  line: document.getElementById('line'),
-  date: document.getElementById('date'),
+import { getSupabase } from './supabase-client.js';import { getSupabase } from './supabase-client  date: document.getElementById('date'),
   startTime: document.getElementById('startTime'),
   endTime: document.getElementById('endTime'),
   lunchMin: document.getElementById('lunchMin'),
@@ -504,9 +468,7 @@ function renderRows() {
           <td><input data-field="eventoMin" type="number" step="1" min="0" value="${Number(r.eventoMin || 0)}" /></td>
           <td><input data-field="assembleaMin" type="number" step="1" min="0" value="${Number(r.assembleaMin || 0)}" /></td>
           <td><input data-field="scioperoMin" type="number" step="1" min="0" value="${Number(r.scioperoMin || 0)}" /></td>
-          <td>
-            <select data-field="postazione">${stationOptions}</select>
-          </td>
+          <td><select data-field="postazione">${stationOptions}</select></td>
           <td class="final-cell">${minutesToHM(finalMinutes(r))}</td>
         </tr>
       `;
@@ -985,3 +947,39 @@ const STATIONS_BY_LINE = {
     'Assente',
     'Responsabile linea 2',
     'Carico manovia',
+    'Premonta',
+    'Montaggio manuale',
+    'Calzera',
+    'Carico e grattatura strutture',
+    'Ribattitura e rimozione chiodi',
+    'Sgrossatura',
+    'Segno a dima e boetta',
+    'Cardatura fine',
+    'Incollaggio suola',
+    'Incollaggio tomaia',
+    'Suolatura',
+    'Pulizia',
+    'Inchiodatura'
+  ],
+  'RIFINITURA 1': [],
+  'RIFINITURA 2': [],
+  'MAGAZZINO SEMILAVORATI': [],
+  'MAGAZZINO SPEDIZIONI': [],
+  'CONTROLLO TOMAIA': []
+};
+
+const APP_STATE_KEY = 'presenze-app-state-v2';
+
+const els = {
+  subtitle: document.getElementById('subtitle'),
+  statusBadge: document.getElementById('statusBadge'),
+  btnLogout: document.getElementById('btnLogout'),
+
+  authSection: document.getElementById('authSection'),
+  loginEmail: document.getElementById('loginEmail'),
+  loginPassword: document.getElementById('loginPassword'),
+  btnLogin: document.getElementById('btnLogin'),
+  authErrors: document.getElementById('authErrors'),
+
+  setupSection: document.getElementById('setupSection'),
+  line: document.getElementById('line'),

@@ -1,82 +1,11 @@
 import { getSupabase } from './supabase-client.js';
 
-const LINES = [
-  'CALZOLERIA 1',
-  'CALZOLERIA 2',
-  'RIFINITURA 1',
-  'RIFINITURA 2',
-  'MAGAZZINO SEMILAVORATI',
-  'MAGAZZINO SPEDIZIONI',
-  'CONTROLLO TOMAIA'
-];
-
-const STATIONS_BY_LINE = {
-  'CALZOLERIA 1': [
-    'Assente',
-    'Responsabile linea 1',
-    'Carico manovia',
-    'Premonta',
-    'Montaggio manuale',
-    'Carico e grattatura strutture',
-    'Ribattitura e rimozione chiodi',
-    'Sgrossatura e ribattitura',
-    'Segno a dima e boetta',
-    'Cardatura fine',
-    'Incollaggio suola',
-    'Incollaggio tomaia',
-    'Suolatura',
-    'Pulizia',
-    'Inchiodatura'
-  ],
-  'CALZOLERIA 2': [
-    'Assente',
-    'Responsabile linea 2',
-    'Carico manovia',
-    'Premonta',
-    'Montaggio manuale',
-    'Calzera',
-    'Carico e grattatura strutture',
-    'Ribattitura e rimozione chiodi',
-    'Sgrossatura',
-    'Segno a dima e boetta',
-    'Cardatura fine',
-    'Incollaggio suola',
-    'Incollaggio tomaia',
-    'Suolatura',
-    'Pulizia',
-    'Inchiodatura'
-  ],
-  'RIFINITURA 1': [],
-  'RIFINITURA 2': [],
-  'MAGAZZINO SEMILAVORATI': [],
-  'MAGAZZINO SPEDIZIONI': [],
-  'CONTROLLO TOMAIA': []
-};
-
-const els = {
-  subtitle: document.getElementById('subtitle'),
-  statusBadge: document.getElementById('statusBadge'),
-  btnLogout: document.getElementById('btnLogout'),
-
-  authSection: document.getElementById('authSection'),
-  loginEmail: document.getElementById('loginEmail'),
-  loginPassword: document.getElementById('loginPassword'),
-  btnLogin: document.getElementById('btnLogin'),
-  authErrors: document.getElementById('authErrors'),
-
-  setupSection: document.getElementById('setupSection'),
-  line: document.getElementById('line'),
-  date: document.getElementById('date'),
-  startTime: document.getElementById('startTime'),
-  endTime: document.getElementById('endTime'),
-  lunchMin: document.getElementById('lunchMin'),
-  snackMin: document.getElementById('snackMin'),
+ document.getElementById('snackMin'),const LINES = [
   stopsMin: document.getElementById('stopsMin'),
   stopsNote: document.getElementById('stopsNote'),
   btnLoadRows: document.getElementById('btnLoadRows'),
   setupErrors: document.getElementById('setupErrors'),
 
-  // Wizard
   step1: document.getElementById('step1'),
   step2: document.getElementById('step2'),
   step3: document.getElementById('step3'),
@@ -103,7 +32,8 @@ const state = {
   allOperators: [],
   rows: [],
   setup: null,
-  currentStep: 1
+  currentStep: 1,
+  activeView: 'setup'
 };
 
 function normalizeLineName(value) {
@@ -136,6 +66,17 @@ function escapeHtml(value) {
   });
 }
 
+function pickFirst(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null) return value;
+  }
+  return null;
+}
+
+function safeString(value) {
+  return String(value ?? '').trim();
+}
+
 function showLoading(show) {
   els.loading.classList.toggle('hidden', !show);
 }
@@ -163,11 +104,8 @@ function clearErrors(el) {
 
 function timeToMinutes(t) {
   if (!t || !String(t).includes(':')) return null;
-
   const [h, m] = String(t).split(':').map(Number);
-
   if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
-
   return h * 60 + m;
 }
 
@@ -221,6 +159,88 @@ function getSetupFromUI() {
   };
 }
 
+function applySetupToUI(setup) {
+  if (!setup) return;
+
+  els.line.value = setup.line || '';
+  els.date.value = setup.date || '';
+  els.startTime.value = setup.startTime || '';
+  els.endTime.value = setup.endTime || '';
+  els.lunchMin.value = String(setup.lunchMin ?? 60);
+  els.snackMin.value = String(setup.snackMin ?? 10);
+  els.stopsMin.value = String(setup.stopsMin ?? 0);
+  els.stopsNote.value = setup.stopsNote || '';
+
+  syncAllQuickButtons();
+}
+
+function getAppSnapshot() {
+  return {
+    currentStep: state.currentStep,
+    activeView: state.activeView,
+    setup: getSetupFromUI(),
+    rows: state.rows
+  };
+}
+
+function saveAppState() {
+  try {
+    sessionStorage.setItem(APP_STATE_KEY, JSON.stringify(getAppSnapshot()));
+  } catch (err) {
+    console.warn('Impossibile salvare stato app', err);
+  }
+}
+
+function clearAppState() {
+  try {
+    sessionStorage.removeItem(APP_STATE_KEY);
+  } catch (err) {
+    console.warn('Impossibile pulire stato app', err);
+  }
+}
+
+function restoreAppState() {
+  try {
+    const raw = sessionStorage.getItem(APP_STATE_KEY);
+    if (!raw) return false;
+
+    const data = JSON.parse(raw);
+
+    if (data.setup) {
+      applySetupToUI(data.setup);
+      state.setup = { ...data.setup };
+    } else {
+      setDefaultDateIfEmpty();
+    }
+
+    state.currentStep = Number(data.currentStep || 1);
+    if (![1, 2, 3].includes(state.currentStep)) {
+      state.currentStep = 1;
+    }
+
+    state.activeView = data.activeView === 'rows' ? 'rows' : 'setup';
+    state.rows = Array.isArray(data.rows) ? data.rows : [];
+
+    renderWizard();
+
+    if (state.activeView === 'rows' && state.rows.length && state.setup) {
+      els.setupSection.classList.add('hidden');
+      els.rowsSection.classList.remove('hidden');
+      els.subtitle.textContent = 'Presenze';
+      renderRows();
+    } else {
+      els.setupSection.classList.remove('hidden');
+      els.rowsSection.classList.add('hidden');
+      els.subtitle.textContent = 'Setup';
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('Impossibile ripristinare stato app', err);
+    return false;
+  }
+}
+
 function validateSetup(setup) {
   const errors = [];
 
@@ -240,7 +260,6 @@ function validateSetup(setup) {
     errors.push('Orari non validi.');
   } else {
     if (em <= sm) em += 1440;
-
     const net = (em - sm) - setup.lunchMin - setup.snackMin - setup.stopsMin;
     if (net < 0) errors.push('Il tempo produttivo base è negativo.');
   }
@@ -300,8 +319,6 @@ function validateWizardStep(step) {
 }
 
 function renderWizard() {
-  if (!els.step1 || !els.step2 || !els.step3) return;
-
   els.step1.classList.add('hidden');
   els.step2.classList.add('hidden');
   els.step3.classList.add('hidden');
@@ -310,25 +327,12 @@ function renderWizard() {
   if (state.currentStep === 2) els.step2.classList.remove('hidden');
   if (state.currentStep === 3) els.step3.classList.remove('hidden');
 
-  if (els.wizardStepBadge) {
-    els.wizardStepBadge.textContent = `Step ${state.currentStep}/3`;
-  }
+  els.wizardStepBadge.textContent = `Step ${state.currentStep}/3`;
+  els.wizardProgressBar.style.width = `${(state.currentStep / 3) * 100}%`;
 
-  if (els.wizardProgressBar) {
-    els.wizardProgressBar.style.width = `${(state.currentStep / 3) * 100}%`;
-  }
-
-  if (els.btnPrevStep) {
-    els.btnPrevStep.classList.toggle('hidden', state.currentStep === 1);
-  }
-
-  if (els.btnNextStep) {
-    els.btnNextStep.classList.toggle('hidden', state.currentStep === 3);
-  }
-
-  if (els.btnLoadRows) {
-    els.btnLoadRows.classList.toggle('hidden', state.currentStep !== 3);
-  }
+  els.btnPrevStep.classList.toggle('hidden', state.currentStep === 1);
+  els.btnNextStep.classList.toggle('hidden', state.currentStep === 3);
+  els.btnLoadRows.classList.toggle('hidden', state.currentStep !== 3);
 
   if (state.currentStep === 3) {
     updateSetupReview();
@@ -336,8 +340,6 @@ function renderWizard() {
 }
 
 function updateSetupReview() {
-  if (!els.setupReview) return;
-
   const setup = getSetupFromUI();
   const selectedLineText = els.line.selectedOptions?.[0]?.textContent?.trim() || '—';
   const note = setup.stopsNote?.trim() || 'Nessuna nota';
@@ -380,17 +382,21 @@ function updateSetupReview() {
 
 function resetWizardToStep1() {
   state.currentStep = 1;
+  state.activeView = 'setup';
   clearErrors(els.setupErrors);
   setDefaultDateIfEmpty();
   syncAllQuickButtons();
   renderWizard();
+  saveAppState();
 }
 
 function goToStep3() {
   state.currentStep = 3;
+  state.activeView = 'setup';
   clearErrors(els.setupErrors);
   syncAllQuickButtons();
   renderWizard();
+  saveAppState();
 }
 
 function workMinutesExcludingLunch(setup) {
@@ -511,19 +517,62 @@ function updateSingleRowFinalCell(target) {
   }
 }
 
+function mapOperatorRecord(raw) {
+  return {
+    id: pickFirst(raw.id, raw.ID),
+    stabilimento: safeString(pickFirst(raw.stabilimento, raw.stabilimento_nome)),
+    cognome: safeString(pickFirst(raw.cognome, raw.last_name, raw.lastname)),
+    nome: safeString(pickFirst(raw.nome, raw.first_name, raw.firstname)),
+    idOperatore: safeString(
+      pickFirst(raw.idOperatore, raw.id_operatore, raw.codice_operatore, raw.codice)
+    ),
+    idCdc: safeString(
+      pickFirst(raw.idCdc, raw.id_cdc, raw.cdc, raw.centro_di_costo)
+    ),
+    macroLineaProduzione: safeString(
+      pickFirst(raw.macroLineaProduzione, raw.macro_linea_produzione)
+    ),
+    lineaProduzione: normalizeLineName(
+      pickFirst(
+        raw.lineaProduzione,
+        raw.linea_produzione,
+        raw.line_name,
+        raw.linea,
+        raw.line
+      )
+    ),
+    postazione: safeString(
+      pickFirst(raw.postazione, raw.station, raw.stazione)
+    ),
+    oreStandard: Number(
+      pickFirst(raw.oreStandard, raw.ore_standard, raw.standard_hours, 8)
+    ) || 8
+  };
+}
+
 async function loadOperatorsFromDb() {
   const res = await state.supabase
     .from('operators')
-    .select('*')
-    .order('cognome')
-    .order('nome');
+    .select('*');
 
   if (res.error) throw res.error;
 
-  state.allOperators = (res.data || []).map((op) => ({
-    ...op,
-    lineaProduzione: normalizeLineName(op.lineaProduzione)
-  }));
+  const rawData = res.data || [];
+
+  state.allOperators = rawData
+    .map(mapOperatorRecord)
+    .sort((a, b) => {
+      const aKey = `${a.cognome} ${a.nome}`.trim();
+      const bKey = `${b.cognome} ${b.nome}`.trim();
+      return aKey.localeCompare(bKey, 'it');
+    });
+
+  console.log('Operatori caricati:', state.allOperators.length);
+  console.log('Esempio primo operatore:', state.allOperators[0]);
+  console.log(
+    'Linee trovate negli operatori:',
+    [...new Set(state.allOperators.map((o) => o.lineaProduzione).filter(Boolean))]
+  );
 }
 
 function loadRowsForSelectedLine() {
@@ -538,22 +587,37 @@ function loadRowsForSelectedLine() {
     return;
   }
 
-  const operators = state.allOperators.filter(
-    (op) => normalizeLineName(op.lineaProduzione) === state.setup.line
-  );
+  const selectedLine = normalizeLineName(state.setup.line);
+
+  const operators = state.allOperators.filter((op) => {
+    return normalizeLineName(op.lineaProduzione) === selectedLine;
+  });
+
+  console.log('Linea selezionata:', selectedLine);
+  console.log('Operatori filtrati:', operators.length);
 
   if (!operators.length) {
-    showErrors(els.setupErrors, ['Nessun operatore trovato per la linea selezionata.']);
+    const availableLines = [
+      ...new Set(state.allOperators.map((o) => o.lineaProduzione).filter(Boolean))
+    ];
+
+    showErrors(els.setupErrors, [
+      'Nessun operatore trovato per la linea selezionata.',
+      `Linee presenti nella tabella operators: ${availableLines.join(', ') || 'nessuna'}`
+    ]);
     return;
   }
 
   state.rows = operators.map((op) => makeRowFromOperator(op, state.setup));
+  state.activeView = 'rows';
 
   renderRows();
 
   els.setupSection.classList.add('hidden');
   els.rowsSection.classList.remove('hidden');
   els.subtitle.textContent = 'Presenze';
+
+  saveAppState();
 }
 
 async function saveToDatabase() {
@@ -646,6 +710,7 @@ async function signIn() {
 }
 
 async function signOut() {
+  clearAppState();
   await state.supabase.auth.signOut();
 }
 
@@ -655,6 +720,7 @@ async function handleSession(session) {
   if (!state.currentUser) {
     state.rows = [];
     state.setup = null;
+    state.activeView = 'setup';
 
     els.authSection.classList.remove('hidden');
     els.setupSection.classList.add('hidden');
@@ -668,17 +734,19 @@ async function handleSession(session) {
   }
 
   els.authSection.classList.add('hidden');
-  els.setupSection.classList.remove('hidden');
-  els.rowsSection.classList.add('hidden');
   els.btnLogout.classList.remove('hidden');
-
   els.statusBadge.textContent = state.currentUser.email;
-  els.subtitle.textContent = 'Setup';
-
-  setDefaultDateIfEmpty();
-  resetWizardToStep1();
 
   await loadOperatorsFromDb();
+
+  const restored = restoreAppState();
+  if (!restored) {
+    els.setupSection.classList.remove('hidden');
+    els.rowsSection.classList.add('hidden');
+    els.subtitle.textContent = 'Setup';
+    setDefaultDateIfEmpty();
+    resetWizardToStep1();
+  }
 }
 
 /* =========================
@@ -719,6 +787,8 @@ function bindQuickButtons() {
 
         input.dispatchEvent(new Event('input', { bubbles: true }));
         input.dispatchEvent(new Event('change', { bubbles: true }));
+
+        saveAppState();
       });
     });
   });
@@ -745,6 +815,7 @@ function bindWizardEvents() {
     if (state.currentStep < 3) {
       state.currentStep += 1;
       renderWizard();
+      saveAppState();
     }
   });
 
@@ -754,6 +825,7 @@ function bindWizardEvents() {
     if (state.currentStep > 1) {
       state.currentStep -= 1;
       renderWizard();
+      saveAppState();
     }
   });
 
@@ -764,17 +836,23 @@ function bindWizardEvents() {
 
       element.addEventListener(eventName, () => {
         clearErrors(els.setupErrors);
+
         if (state.currentStep === 3) {
           updateSetupReview();
         }
+
+        saveAppState();
       });
 
       if (element.tagName === 'INPUT' && ['number', 'time', 'date'].includes(element.type)) {
         element.addEventListener('input', () => {
           clearErrors(els.setupErrors);
+
           if (state.currentStep === 3) {
             updateSetupReview();
           }
+
+          saveAppState();
         });
       }
     });
@@ -794,13 +872,13 @@ function bindRowsEvents() {
     if (field === 'workMinHours') {
       state.rows[idx].workMin = parseHoursInputToMinutes(target.value || 0);
     } else if (field === 'eventoMin' || field === 'assembleaMin' || field === 'scioperoMin') {
-      const safeNumber = Math.max(0, Number(target.value || 0));
-      state.rows[idx][field] = safeNumber;
+      state.rows[idx][field] = Math.max(0, Number(target.value || 0));
     } else if (field === 'postazione') {
       state.rows[idx].postazione = target.value || '';
     }
 
     updateSingleRowFinalCell(target);
+    saveAppState();
   };
 
   els.rowsBody?.addEventListener('input', (ev) => {
@@ -831,6 +909,7 @@ function bindMainEvents() {
   els.btnLoadRows?.addEventListener('click', loadRowsForSelectedLine);
 
   els.btnBackSetup?.addEventListener('click', () => {
+    state.activeView = 'setup';
     els.rowsSection.classList.add('hidden');
     els.setupSection.classList.remove('hidden');
     els.subtitle.textContent = 'Setup';
@@ -851,6 +930,7 @@ function bindMainEvents() {
       await saveToDatabase();
       els.statusBadge.textContent = 'Presenze salvate';
       alert('Presenze salvate correttamente nel database.');
+      saveAppState();
     } catch (err) {
       console.error(err);
       showErrors(els.rowsErrors, [err.message || 'Errore durante il salvataggio nel database']);
@@ -872,6 +952,14 @@ async function init() {
   bindRowsEvents();
   bindMainEvents();
 
+  window.addEventListener('beforeunload', saveAppState);
+  window.addEventListener('pagehide', saveAppState);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      saveAppState();
+    }
+  });
+
   const current = await state.supabase.auth.getSession();
   await handleSession(current.data.session);
 
@@ -887,3 +975,74 @@ window.addEventListener('DOMContentLoaded', () => {
     showErrors(els.authErrors, [err.message || 'Errore inizializzazione']);
   });
 });
+  'CALZOLERIA 1',
+  'CALZOLERIA 2',
+  'RIFINITURA 1',
+  'RIFINITURA 2',
+  'MAGAZZINO SEMILAVORATI',
+  'MAGAZZINO SPEDIZIONI',
+  'CONTROLLO TOMAIA'
+];
+
+const STATIONS_BY_LINE = {
+  'CALZOLERIA 1': [
+    'Assente',
+    'Responsabile linea 1',
+    'Carico manovia',
+    'Premonta',
+    'Montaggio manuale',
+    'Carico e grattatura strutture',
+    'Ribattitura e rimozione chiodi',
+    'Sgrossatura e ribattitura',
+    'Segno a dima e boetta',
+    'Cardatura fine',
+    'Incollaggio suola',
+    'Incollaggio tomaia',
+    'Suolatura',
+    'Pulizia',
+    'Inchiodatura'
+  ],
+  'CALZOLERIA 2': [
+    'Assente',
+    'Responsabile linea 2',
+    'Carico manovia',
+    'Premonta',
+    'Montaggio manuale',
+    'Calzera',
+    'Carico e grattatura strutture',
+    'Ribattitura e rimozione chiodi',
+    'Sgrossatura',
+    'Segno a dima e boetta',
+    'Cardatura fine',
+    'Incollaggio suola',
+    'Incollaggio tomaia',
+    'Suolatura',
+    'Pulizia',
+    'Inchiodatura'
+  ],
+  'RIFINITURA 1': [],
+  'RIFINITURA 2': [],
+  'MAGAZZINO SEMILAVORATI': [],
+  'MAGAZZINO SPEDIZIONI': [],
+  'CONTROLLO TOMAIA': []
+};
+
+const APP_STATE_KEY = 'presenze-app-state-v2';
+
+const els = {
+  subtitle: document.getElementById('subtitle'),
+  statusBadge: document.getElementById('statusBadge'),
+  btnLogout: document.getElementById('btnLogout'),
+
+  authSection: document.getElementById('authSection'),
+  loginEmail: document.getElementById('loginEmail'),
+  loginPassword: document.getElementById('loginPassword'),
+  btnLogin: document.getElementById('btnLogin'),
+  authErrors: document.getElementById('authErrors'),
+
+  setupSection: document.getElementById('setupSection'),
+  line: document.getElementById('line'),
+  date: document.getElementById('date'),
+  startTime: document.getElementById('startTime'),
+  endTime: document.getElementById('endTime'),
+  lunchMin: document.getElementById('lunchMin'),

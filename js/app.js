@@ -479,7 +479,8 @@ const InserimentoPresenzeApp = (() => {
         stops_note: state.setup.stopsNote || '',
         base_work_minutes: Number(state.setup.baseWorkMinutes) || 0,
         base_net_minutes: Number(state.setup.baseNetMinutes) || 0,
-        created_by: state.user.email || state.user.id
+        created_by: state.user.id
+
       };
 
       const upsertResponse = await client

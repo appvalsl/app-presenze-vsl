@@ -491,7 +491,16 @@ const InserimentoPresenzeApp = (() => {
     const idOperatore = firstDefined(row, ['idOperatore', 'id_operatore', 'codice_operatore', 'codice']) || '';
     const idCdc = firstDefined(row, ['idCdc', 'id_cdc', 'cdc', 'centro_di_costo']) || '';
     const macroLineaProduzione = firstDefined(row, ['macroLineaProduzione', 'macro_linea_produzione']) || '';
-    const lineaProduzione = firstDefined(row, ['lineaProduzione', 'linea_produzione', 'line_name', 'linea', 'line']) || '';
+    const lineaProduzione = firstDefined(row, [
+  'lineaProduzione',
+  'lineaproduzione',
+  'linea_produzione',
+  'line_name',
+  'linea',
+  'line'
+])?.toString().trim() || '';
+
+    
     const postazione = firstDefined(row, ['postazione', 'station', 'stazione']) || '';
     const oreStandardRaw = firstDefined(row, ['oreStandard', 'ore_standard', 'standard_hours']);
     const stabilimento = firstDefined(row, ['stabilimento', 'stabilimento_nome']) || '';

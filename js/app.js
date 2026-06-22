@@ -264,20 +264,28 @@ const InserimentoPresenzeApp = (() => {
   }
 
   function showAuthenticatedUI() {
-    dom.authSection.classList.add('hidden');
-    dom.appSection.classList.remove('hidden');
-    dom.userBadge.textContent = state.user && state.user.email ? state.user.email : 'Utente autenticato';
-    dom.userBadge.classList.remove('hidden');
-    dom.logoutBtn.classList.remove('hidden');
+    if (dom.authSection) dom.authSection.classList.add('hidden');
+    if (dom.appSection) dom.appSection.classList.remove('hidden');
+
+    if (dom.userBadge) {
+      dom.userBadge.textContent = state.user && state.user.email ? state.user.email : 'Utente autenticato';
+      dom.userBadge.classList.remove('hidden');
+    }
+
+    if (dom.logoutBtn) dom.logoutBtn.classList.remove('hidden');
     hideBox(dom.authErrors);
   }
 
   function showLoggedOutUI() {
-    dom.authSection.classList.remove('hidden');
-    dom.appSection.classList.add('hidden');
-    dom.userBadge.textContent = '';
-    dom.userBadge.classList.add('hidden');
-    dom.logoutBtn.classList.add('hidden');
+    if (dom.authSection) dom.authSection.classList.remove('hidden');
+    if (dom.appSection) dom.appSection.classList.add('hidden');
+
+    if (dom.userBadge) {
+      dom.userBadge.textContent = '';
+      dom.userBadge.classList.add('hidden');
+    }
+
+    if (dom.logoutBtn) dom.logoutBtn.classList.add('hidden');
     hideBox(dom.globalMessage);
   }
 
@@ -285,16 +293,18 @@ const InserimentoPresenzeApp = (() => {
     hideBox(dom.authErrors);
     hideBox(dom.globalMessage);
 
-    const email = (dom.emailInput.value || '').trim();
-    const password = dom.passwordInput.value || '';
+    const email = (dom.emailInput?.value || '').trim();
+    const password = dom.passwordInput?.value || '';
 
     if (!email || !password) {
       showBox(dom.authErrors, 'Inserisci email e password.', 'error');
       return;
     }
 
-    dom.loginBtn.disabled = true;
-    dom.loginBtn.textContent = 'Accesso in corso...';
+    if (dom.loginBtn) {
+      dom.loginBtn.disabled = true;
+      dom.loginBtn.textContent = 'Accesso in corso...';
+    }
 
     try {
       const { data, error } = await client.auth.signInWithPassword({ email, password });
@@ -315,13 +325,15 @@ const InserimentoPresenzeApp = (() => {
       renderAll();
 
       showBox(dom.globalMessage, 'Login effettuato con successo.', 'success');
-      dom.passwordInput.value = '';
+      if (dom.passwordInput) dom.passwordInput.value = '';
     } catch (error) {
       console.error('Errore login:', error);
       showBox(dom.authErrors, 'Errore inatteso durante il login.', 'error');
     } finally {
-      dom.loginBtn.disabled = false;
-      dom.loginBtn.textContent = 'Accedi';
+      if (dom.loginBtn) {
+        dom.loginBtn.disabled = false;
+        dom.loginBtn.textContent = 'Accedi';
+      }
     }
   }
 
@@ -442,6 +454,11 @@ const InserimentoPresenzeApp = (() => {
       return;
     }
 
+    if (!dom.confirmModal || !dom.confirmModalSummary || !dom.confirmSaveBtn) {
+      handleConfirmSave();
+      return;
+    }
+
     openConfirmModal();
   }
 
@@ -468,8 +485,10 @@ const InserimentoPresenzeApp = (() => {
       return;
     }
 
-    dom.confirmSaveBtn.disabled = true;
-    dom.confirmSaveBtn.textContent = 'Salvataggio in corso...';
+    if (dom.confirmSaveBtn) {
+      dom.confirmSaveBtn.disabled = true;
+      dom.confirmSaveBtn.textContent = 'Salvataggio in corso...';
+    }
 
     try {
       const sessionPayload = {
@@ -520,7 +539,7 @@ const InserimentoPresenzeApp = (() => {
         line_orig: row.line_orig || '',
         line_day: row.line_day || '',
         postazione: row.postazione || '',
-        ore_standard: row.ore_standard === '' ? null : Number(row.ore_standard),
+        ore_standard: Number(row.ore_standard) || 0,
         work_min: Number(row.work_min) || 0,
         evento_min: Number(row.evento_min) || 0,
         assemblea_min: Number(row.assemblea_min) || 0,
@@ -542,8 +561,10 @@ const InserimentoPresenzeApp = (() => {
       console.error('Errore salvataggio:', error);
       showBox(dom.rowsErrors, error.message || 'Errore durante il salvataggio nel database.', 'error');
     } finally {
-      dom.confirmSaveBtn.disabled = false;
-      dom.confirmSaveBtn.textContent = 'Conferma e salva';
+      if (dom.confirmSaveBtn) {
+        dom.confirmSaveBtn.disabled = false;
+        dom.confirmSaveBtn.textContent = 'Conferma e salva';
+      }
     }
   }
 
@@ -599,7 +620,7 @@ const InserimentoPresenzeApp = (() => {
       return;
     }
 
-    const rawValue = (dom.addOperatorSearch.value || '').trim();
+    const rawValue = (dom.addOperatorSearch?.value || '').trim();
     if (!rawValue) {
       showBox(dom.rowsErrors, 'Scrivi o seleziona un operatore da aggiungere.', 'error');
       return;
@@ -631,7 +652,7 @@ const InserimentoPresenzeApp = (() => {
     saveState();
     renderRowsView();
 
-    dom.addOperatorSearch.value = '';
+    if (dom.addOperatorSearch) dom.addOperatorSearch.value = '';
     showBox(dom.globalMessage, 'Operatore aggiunto correttamente.', 'success');
   }
 
@@ -660,7 +681,7 @@ const InserimentoPresenzeApp = (() => {
     const macroLineaProduzione = firstDefined(row, ['macroLineaProduzione', 'macro_linea_produzione', 'macrolineaproduzione']) || '';
     const lineaProduzione = firstDefined(row, ['lineaProduzione', 'linea_produzione', 'lineaproduzione', 'line_name', 'linea', 'line']) || '';
     const postazione = firstDefined(row, ['postazione', 'station', 'stazione']) || '';
-    const oreStandardRaw = firstDefined(row, ['oreStandard', 'ore_standard', 'standard_hours']);
+    const oreStandardRaw = firstDefined(row, ['oreStandard', 'ore_standard', 'orestandard', 'standard_hours']);
     const stabilimento = firstDefined(row, ['stabilimento', 'stabilimento_nome']) || '';
 
     return {
@@ -672,7 +693,12 @@ const InserimentoPresenzeApp = (() => {
       macroLineaProduzione: String(macroLineaProduzione).trim(),
       lineaProduzione: String(lineaProduzione).trim(),
       postazione: String(postazione).trim(),
-      oreStandard: oreStandardRaw === undefined || oreStandardRaw === null || oreStandardRaw === '' ? '' : Number(oreStandardRaw),
+      oreStandard:
+        oreStandardRaw === undefined ||
+        oreStandardRaw === null ||
+        oreStandardRaw === ''
+          ? 0
+          : Number(oreStandardRaw),
       stabilimento: String(stabilimento).trim()
     };
   }
@@ -713,7 +739,7 @@ const InserimentoPresenzeApp = (() => {
       line_orig: operator.lineaProduzione,
       line_day: lineName,
       postazione: initialStation,
-      ore_standard: operator.oreStandard === '' ? '' : Number(operator.oreStandard),
+      ore_standard: Number(operator.oreStandard) || 0,
       work_min: workMin,
       evento_min: 0,
       assemblea_min: 0,
@@ -826,14 +852,14 @@ const InserimentoPresenzeApp = (() => {
   }
 
   function renderSetupForm() {
-    dom.lineSelect.value = state.setup.lineName || '';
-    dom.workDate.value = state.setup.workDate || '';
-    dom.startTime.value = state.setup.startTime || '';
-    dom.endTime.value = state.setup.endTime || '';
-    dom.lunchMin.value = state.setup.lunchMin || '0';
-    dom.snackMin.value = state.setup.snackMin || '0';
-    dom.stopsMin.value = state.setup.stopsMin || '0';
-    dom.stopsNote.value = state.setup.stopsNote || '';
+    if (dom.lineSelect) dom.lineSelect.value = state.setup.lineName || '';
+    if (dom.workDate) dom.workDate.value = state.setup.workDate || '';
+    if (dom.startTime) dom.startTime.value = state.setup.startTime || '';
+    if (dom.endTime) dom.endTime.value = state.setup.endTime || '';
+    if (dom.lunchMin) dom.lunchMin.value = state.setup.lunchMin || '0';
+    if (dom.snackMin) dom.snackMin.value = state.setup.snackMin || '0';
+    if (dom.stopsMin) dom.stopsMin.value = state.setup.stopsMin || '0';
+    if (dom.stopsNote) dom.stopsNote.value = state.setup.stopsNote || '';
     syncQuickButtons();
   }
 
@@ -846,17 +872,18 @@ const InserimentoPresenzeApp = (() => {
       stepEl.classList.toggle('hidden', stepNumber !== state.currentStep);
     });
 
-    dom.stepBadge.textContent = `Step ${state.currentStep} di 3`;
-    dom.progressFill.style.width = `${(state.currentStep / 3) * 100}%`;
+    if (dom.stepBadge) dom.stepBadge.textContent = `Step ${state.currentStep} di 3`;
+    if (dom.progressFill) dom.progressFill.style.width = `${(state.currentStep / 3) * 100}%`;
+    if (dom.wizardBackBtn) dom.wizardBackBtn.disabled = state.currentStep === 1;
+    if (dom.wizardNextBtn) dom.wizardNextBtn.classList.toggle('hidden', state.currentStep === 3);
 
-    dom.wizardBackBtn.disabled = state.currentStep === 1;
-    dom.wizardNextBtn.classList.toggle('hidden', state.currentStep === 3);
-
-    dom.setupView.classList.toggle('hidden', state.activeView !== 'setup');
-    dom.rowsView.classList.toggle('hidden', state.activeView !== 'rows');
+    if (dom.setupView) dom.setupView.classList.toggle('hidden', state.activeView !== 'setup');
+    if (dom.rowsView) dom.rowsView.classList.toggle('hidden', state.activeView !== 'rows');
   }
 
   function renderSetupSummary() {
+    if (!dom.setupSummaryBox) return;
+
     readSetupFromForm();
     validateStep(2);
 
@@ -885,6 +912,8 @@ const InserimentoPresenzeApp = (() => {
   }
 
   function renderRowsSetupSummary() {
+    if (!dom.rowsSetupSummary) return;
+
     readSetupFromForm();
 
     const items = [
@@ -909,7 +938,11 @@ const InserimentoPresenzeApp = (() => {
   }
 
   function renderRowsView() {
-    dom.rowCountBadge.textContent = `${state.rows.length} ${state.rows.length === 1 ? 'riga' : 'righe'}`;
+    if (dom.rowCountBadge) {
+      dom.rowCountBadge.textContent = `${state.rows.length} ${state.rows.length === 1 ? 'riga' : 'righe'}`;
+    }
+
+    if (!dom.attendanceTableBody) return;
 
     if (!state.rows.length) {
       dom.attendanceTableBody.innerHTML = `
@@ -948,7 +981,7 @@ const InserimentoPresenzeApp = (() => {
               <div class="operator-name">${escapeHtml(operatorLabel)}</div>
               <div class="operator-meta">${escapeHtml(operatorMeta || '-')}</div>
             </td>
-            <td>${row.ore_standard === '' ? '-' : escapeHtml(String(row.ore_standard))}</td>
+            <td>${escapeHtml(String(Number(row.ore_standard) || 0))}</td>
             <td>
               <input class="table-input" type="number" min="0" step="0.25" inputmode="decimal" value="${escapeAttribute(workHours)}" data-row-index="${index}" data-field="workHours">
             </td>
@@ -977,6 +1010,8 @@ const InserimentoPresenzeApp = (() => {
   }
 
   function openConfirmModal() {
+    if (!dom.confirmModal || !dom.confirmModalSummary) return;
+
     const summary = buildSummaryByStation();
 
     dom.confirmModalSummary.innerHTML = summary
@@ -1085,14 +1120,14 @@ const InserimentoPresenzeApp = (() => {
   }
 
   function readSetupFromForm() {
-    state.setup.lineName = dom.lineSelect.value || '';
-    state.setup.workDate = dom.workDate.value || '';
-    state.setup.startTime = dom.startTime.value || '';
-    state.setup.endTime = dom.endTime.value || '';
-    state.setup.lunchMin = String(toNonNegativeInt(dom.lunchMin.value || 0));
-    state.setup.snackMin = String(toNonNegativeInt(dom.snackMin.value || 0));
-    state.setup.stopsMin = String(toNonNegativeInt(dom.stopsMin.value || 0));
-    state.setup.stopsNote = dom.stopsNote.value || '';
+    state.setup.lineName = dom.lineSelect?.value || '';
+    state.setup.workDate = dom.workDate?.value || '';
+    state.setup.startTime = dom.startTime?.value || '';
+    state.setup.endTime = dom.endTime?.value || '';
+    state.setup.lunchMin = String(toNonNegativeInt(dom.lunchMin?.value || 0));
+    state.setup.snackMin = String(toNonNegativeInt(dom.snackMin?.value || 0));
+    state.setup.stopsMin = String(toNonNegativeInt(dom.stopsMin?.value || 0));
+    state.setup.stopsNote = dom.stopsNote?.value || '';
 
     const dayMinutes = minutesBetweenTimes(state.setup.startTime, state.setup.endTime);
     const lunchMin = toNonNegativeInt(state.setup.lunchMin);
@@ -1120,6 +1155,7 @@ const InserimentoPresenzeApp = (() => {
       return {
         ...row,
         line_day: state.setup.lineName,
+        ore_standard: Number(row.ore_standard) || 0,
         final_min: calculateFinalMinutes(
           workMin,
           Number(state.setup.snackMin) || 0,
@@ -1287,7 +1323,7 @@ const InserimentoPresenzeApp = (() => {
           line_orig: row.line_orig || '',
           line_day: row.line_day || '',
           postazione: row.postazione || '',
-          ore_standard: row.ore_standard === '' || row.ore_standard === null || row.ore_standard === undefined ? '' : Number(row.ore_standard),
+          ore_standard: Number(row.ore_standard) || 0,
           work_min: Number(row.work_min) || 0,
           evento_min: Number(row.evento_min) || 0,
           assemblea_min: Number(row.assemblea_min) || 0,

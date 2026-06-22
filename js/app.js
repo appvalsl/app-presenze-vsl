@@ -134,13 +134,9 @@ const InserimentoPresenzeApp = (() => {
     dom.closeConfirmModalBtn = document.getElementById('closeConfirmModalBtn');
     dom.cancelConfirmBtn = document.getElementById('cancelConfirmBtn');
     dom.confirmSaveBtn = document.getElementById('confirmSaveBtn');
-
-    console.log('Inserimento Presenze: login button trovato =', Boolean(dom.loginBtn));
   }
 
   async function init() {
-    console.log('Inserimento Presenze: init partito');
-
     initDom();
     bindEvents();
     restoreState();
@@ -168,25 +164,11 @@ const InserimentoPresenzeApp = (() => {
   }
 
   function bindEvents() {
-    if (dom.loginBtn) {
-      dom.loginBtn.addEventListener('click', handleLogin);
-    }
-
-    if (dom.logoutBtn) {
-      dom.logoutBtn.addEventListener('click', handleLogout);
-    }
-
-    if (dom.wizardBackBtn) {
-      dom.wizardBackBtn.addEventListener('click', handleWizardBack);
-    }
-
-    if (dom.wizardNextBtn) {
-      dom.wizardNextBtn.addEventListener('click', handleWizardNext);
-    }
-
-    if (dom.loadOperatorsBtn) {
-      dom.loadOperatorsBtn.addEventListener('click', handleLoadOperatorsForLine);
-    }
+    if (dom.loginBtn) dom.loginBtn.addEventListener('click', handleLogin);
+    if (dom.logoutBtn) dom.logoutBtn.addEventListener('click', handleLogout);
+    if (dom.wizardBackBtn) dom.wizardBackBtn.addEventListener('click', handleWizardBack);
+    if (dom.wizardNextBtn) dom.wizardNextBtn.addEventListener('click', handleWizardNext);
+    if (dom.loadOperatorsBtn) dom.loadOperatorsBtn.addEventListener('click', handleLoadOperatorsForLine);
 
     if (dom.backToSetupBtn) {
       dom.backToSetupBtn.addEventListener('click', () => {
@@ -199,13 +181,8 @@ const InserimentoPresenzeApp = (() => {
       });
     }
 
-    if (dom.saveRowsBtn) {
-      dom.saveRowsBtn.addEventListener('click', handleSaveRows);
-    }
-
-    if (dom.addOperatorBtn) {
-      dom.addOperatorBtn.addEventListener('click', handleAddOperator);
-    }
+    if (dom.saveRowsBtn) dom.saveRowsBtn.addEventListener('click', handleSaveRows);
+    if (dom.addOperatorBtn) dom.addOperatorBtn.addEventListener('click', handleAddOperator);
 
     if (dom.addOperatorSearch) {
       dom.addOperatorSearch.addEventListener('keydown', (event) => {
@@ -216,23 +193,13 @@ const InserimentoPresenzeApp = (() => {
       });
     }
 
-    if (dom.closeConfirmModalBtn) {
-      dom.closeConfirmModalBtn.addEventListener('click', closeConfirmModal);
-    }
-
-    if (dom.cancelConfirmBtn) {
-      dom.cancelConfirmBtn.addEventListener('click', closeConfirmModal);
-    }
-
-    if (dom.confirmSaveBtn) {
-      dom.confirmSaveBtn.addEventListener('click', handleConfirmSave);
-    }
+    if (dom.closeConfirmModalBtn) dom.closeConfirmModalBtn.addEventListener('click', closeConfirmModal);
+    if (dom.cancelConfirmBtn) dom.cancelConfirmBtn.addEventListener('click', closeConfirmModal);
+    if (dom.confirmSaveBtn) dom.confirmSaveBtn.addEventListener('click', handleConfirmSave);
 
     if (dom.confirmModal) {
       dom.confirmModal.addEventListener('click', (event) => {
-        if (event.target === dom.confirmModal) {
-          closeConfirmModal();
-        }
+        if (event.target === dom.confirmModal) closeConfirmModal();
       });
     }
 
@@ -315,8 +282,6 @@ const InserimentoPresenzeApp = (() => {
   }
 
   async function handleLogin() {
-    console.log('Inserimento Presenze: click login intercettato');
-
     hideBox(dom.authErrors);
     hideBox(dom.globalMessage);
 
@@ -434,7 +399,7 @@ const InserimentoPresenzeApp = (() => {
     if (!state.operators.length) {
       const detail = state.lastOperatorsLoadError
         ? ` Dettaglio: ${state.lastOperatorsLoadError}`
-        : ' Nessun record restituito dalla tabella operators. Verifica che la tabella sia popolata e che l’utente abbia permessi SELECT/RLS corretti.';
+        : ' Nessun record restituito dalla tabella operators.';
       showBox(dom.wizardErrors, `Impossibile caricare gli operatori dal database.${detail}`, 'error');
       return;
     }
@@ -589,11 +554,9 @@ const InserimentoPresenzeApp = (() => {
 
     try {
       const response = await client.from('operators').select('*');
-
       if (response.error) throw response.error;
 
       const rawOperators = Array.isArray(response.data) ? response.data : [];
-      console.log('Inserimento Presenze: righe operators caricate =', rawOperators.length);
 
       state.operators = rawOperators
         .map(mapOperatorRow)
@@ -605,9 +568,6 @@ const InserimentoPresenzeApp = (() => {
       }));
 
       renderOperatorsDatalist();
-
-      const uniqueLines = unique(state.operators.map((operator) => operator.lineaProduzione).filter(Boolean));
-      console.log('Inserimento Presenze: linee trovate negli operators =', uniqueLines);
 
       if (!rawOperators.length) {
         state.lastOperatorsLoadError = 'La query sulla tabella operators ha restituito 0 righe.';
@@ -695,10 +655,10 @@ const InserimentoPresenzeApp = (() => {
     const id = firstDefined(row, ['id', 'ID']);
     const cognome = firstDefined(row, ['cognome', 'last_name', 'lastname']) || '';
     const nome = firstDefined(row, ['nome', 'first_name', 'firstname']) || '';
-    const idOperatore = firstDefined(row, ['idOperatore', 'id_operatore', 'codice_operatore', 'codice']) || '';
-    const idCdc = firstDefined(row, ['idCdc', 'id_cdc', 'cdc', 'centro_di_costo']) || '';
-    const macroLineaProduzione = firstDefined(row, ['macroLineaProduzione', 'macro_linea_produzione']) || '';
-    const lineaProduzione = firstDefined(row, ['lineaProduzione', 'linea_produzione', 'line_name', 'linea', 'line']) || '';
+    const idOperatore = firstDefined(row, ['idOperatore', 'id_operatore', 'idoperatore', 'codice_operatore', 'codice']) || '';
+    const idCdc = firstDefined(row, ['idCdc', 'id_cdc', 'idcdc', 'cdc', 'centro_di_costo']) || '';
+    const macroLineaProduzione = firstDefined(row, ['macroLineaProduzione', 'macro_linea_produzione', 'macrolineaproduzione']) || '';
+    const lineaProduzione = firstDefined(row, ['lineaProduzione', 'linea_produzione', 'lineaproduzione', 'line_name', 'linea', 'line']) || '';
     const postazione = firstDefined(row, ['postazione', 'station', 'stazione']) || '';
     const oreStandardRaw = firstDefined(row, ['oreStandard', 'ore_standard', 'standard_hours']);
     const stabilimento = firstDefined(row, ['stabilimento', 'stabilimento_nome']) || '';
@@ -990,57 +950,19 @@ const InserimentoPresenzeApp = (() => {
             </td>
             <td>${row.ore_standard === '' ? '-' : escapeHtml(String(row.ore_standard))}</td>
             <td>
-              <input
-                class="table-input"
-                type="number"
-                min="0"
-                step="0.25"
-                inputmode="decimal"
-                value="${escapeAttribute(workHours)}"
-                data-row-index="${index}"
-                data-field="workHours"
-              >
+              <input class="table-input" type="number" min="0" step="0.25" inputmode="decimal" value="${escapeAttribute(workHours)}" data-row-index="${index}" data-field="workHours">
             </td>
             <td>
-              <input
-                class="table-input"
-                type="number"
-                min="0"
-                step="1"
-                inputmode="numeric"
-                value="${escapeAttribute(String(row.evento_min))}"
-                data-row-index="${index}"
-                data-field="evento_min"
-              >
+              <input class="table-input" type="number" min="0" step="1" inputmode="numeric" value="${escapeAttribute(String(row.evento_min))}" data-row-index="${index}" data-field="evento_min">
             </td>
             <td>
-              <input
-                class="table-input"
-                type="number"
-                min="0"
-                step="1"
-                inputmode="numeric"
-                value="${escapeAttribute(String(row.assemblea_min))}"
-                data-row-index="${index}"
-                data-field="assemblea_min"
-              >
+              <input class="table-input" type="number" min="0" step="1" inputmode="numeric" value="${escapeAttribute(String(row.assemblea_min))}" data-row-index="${index}" data-field="assemblea_min">
             </td>
             <td>
-              <input
-                class="table-input"
-                type="number"
-                min="0"
-                step="1"
-                inputmode="numeric"
-                value="${escapeAttribute(String(row.sciopero_min))}"
-                data-row-index="${index}"
-                data-field="sciopero_min"
-              >
+              <input class="table-input" type="number" min="0" step="1" inputmode="numeric" value="${escapeAttribute(String(row.sciopero_min))}" data-row-index="${index}" data-field="sciopero_min">
             </td>
             <td>
-              <select class="table-select" data-row-index="${index}" data-field="postazione">
-                ${options}
-              </select>
+              <select class="table-select" data-row-index="${index}" data-field="postazione">${options}</select>
             </td>
             <td class="final-cell">
               <div class="final-box">
@@ -1065,7 +987,6 @@ const InserimentoPresenzeApp = (() => {
         return `
           <div class="confirm-card${extraClass}">
             <h3 class="confirm-card-title">${escapeHtml(item.title)}</h3>
-
             <div class="confirm-kpis">
               <div class="confirm-kpi">
                 <span class="confirm-kpi-label">Operatori</span>
@@ -1084,7 +1005,6 @@ const InserimentoPresenzeApp = (() => {
                 <span class="confirm-kpi-value">${escapeHtml(`${item.eventoMin} / ${item.assembleaMin} / ${item.scioperoMin} min`)}</span>
               </div>
             </div>
-
             <div class="confirm-names">
               <strong>Nominativi:</strong> ${escapeHtml(namesText)}
             </div>
@@ -1197,7 +1117,6 @@ const InserimentoPresenzeApp = (() => {
   function recalcAllRows() {
     state.rows = state.rows.map((row) => {
       const workMin = Number(row.work_min) || Number(state.setup.baseWorkMinutes) || 0;
-
       return {
         ...row,
         line_day: state.setup.lineName,
@@ -1253,20 +1172,14 @@ const InserimentoPresenzeApp = (() => {
     hideBox(dom.wizardErrors);
     hideBox(dom.rowsErrors);
 
-    if (dom.addOperatorSearch) {
-      dom.addOperatorSearch.value = '';
-    }
+    if (dom.addOperatorSearch) dom.addOperatorSearch.value = '';
 
     renderAll();
   }
 
   function getStationOptions(lineName, extraStation) {
     const base = Array.isArray(STATIONS_BY_LINE[lineName]) ? [...STATIONS_BY_LINE[lineName]] : [];
-
-    if (extraStation && !base.includes(extraStation)) {
-      base.push(extraStation);
-    }
-
+    if (extraStation && !base.includes(extraStation)) base.push(extraStation);
     if (!base.length) return extraStation ? [extraStation] : [''];
     return base;
   }
@@ -1374,9 +1287,7 @@ const InserimentoPresenzeApp = (() => {
           line_orig: row.line_orig || '',
           line_day: row.line_day || '',
           postazione: row.postazione || '',
-          ore_standard: row.ore_standard === '' || row.ore_standard === null || row.ore_standard === undefined
-            ? ''
-            : Number(row.ore_standard),
+          ore_standard: row.ore_standard === '' || row.ore_standard === null || row.ore_standard === undefined ? '' : Number(row.ore_standard),
           work_min: Number(row.work_min) || 0,
           evento_min: Number(row.evento_min) || 0,
           assemblea_min: Number(row.assemblea_min) || 0,

@@ -20,7 +20,6 @@
           <p class="app-subtitle">Gestione presenze giornaliere linea produttiva</p>
         </div>
       </div>
-
       <div class="topbar-right">
         <span id="userBadge" class="user-badge hidden"></span>
         <button id="logoutBtn" class="btn btn-secondary hidden" type="button">Logout</button>
@@ -101,7 +100,6 @@
 
             <div id="step2" class="wizard-step hidden" data-step="2">
               <h3>Step 2 - Parametri giornata</h3>
-
               <div class="form-grid">
                 <div class="field">
                   <label for="workDate">Data</label>
@@ -173,7 +171,6 @@
             <div id="step3" class="wizard-step hidden" data-step="3">
               <h3>Step 3 - Riepilogo setup</h3>
               <div id="setupSummaryBox" class="summary-box"></div>
-
               <div class="actions split-actions">
                 <div></div>
                 <button id="loadOperatorsBtn" class="btn btn-primary" type="button">Carica operatori della linea</button>
@@ -194,7 +191,6 @@
                 <h2>Presenze giornaliere</h2>
                 <p>Compila i dettagli per ogni operatore e salva nel database.</p>
               </div>
-
               <div class="rows-top-right">
                 <span id="rowCountBadge" class="row-badge">0 righe</span>
               </div>
@@ -204,36 +200,49 @@
             <div id="rowsErrors" class="message hidden" role="alert" aria-live="polite"></div>
 
             <div class="actions toolbar">
-  <button id="backToSetupBtn" class="btn btn-secondary" type="button">Torna al setup</button>
+              <button id="backToSetupBtn" class="btn btn-secondary" type="button">Torna al setup</button>
+              <button id="saveRowsBtn" class="btn btn-primary" type="button">Salva nel database</button>
+            </div>
 
-  <div class="add-operator-box">
-    <select id="addOperatorSelect">
-      <option value="">Aggiungi operatore...</option>
-    </select>
-    <button id="addOperatorBtn" class="btn btn-secondary" type="button">Aggiungi operatore</button>
-  </div>
+            <div class="card inline-card add-operator-panel">
+              <div class="card-header compact-header">
+                <h3>Aggiungi operatore</h3>
+                <p>Cerca in tutto il database, non solo nella linea selezionata.</p>
+              </div>
 
-  <button id="saveRowsBtn" class="btn btn-primary" type="button">Salva nel database</button>
-</div>
+              <div class="add-operator-grid">
+                <div class="field">
+                  <label for="addOperatorSearch">Cerca operatore nel database</label>
+                  <input
+                    id="addOperatorSearch"
+                    list="operatorsDatalist"
+                    type="text"
+                    placeholder="Scrivi nome, cognome, ID operatore o linea"
+                    autocomplete="off"
+                  >
+                  <datalist id="operatorsDatalist"></datalist>
+                </div>
 
-
-
-            
+                <div class="field add-operator-btn-wrap">
+                  <label>&nbsp;</label>
+                  <button id="addOperatorBtn" class="btn btn-secondary" type="button">Aggiungi operatore</button>
+                </div>
+              </div>
+            </div>
 
             <div class="table-wrap">
               <table class="attendance-table">
                 <thead>
                   <tr>
-  <th>Operatore</th>
-  <th>Ore std</th>
-  <th>Ore lavorate (h)</th>
-  <th>Evento min</th>
-  <th>Assemblea min</th>
-  <th>Sciopero min</th>
-  <th>Postazione</th>
-  <th>Finali</th>
-  <th>Azioni</th>
-</tr>
+                    <th>Operatore</th>
+                    <th>Ore std</th>
+                    <th>Ore lavorate (h)</th>
+                    <th>Evento min</th>
+                    <th>Assemblea min</th>
+                    <th>Sciopero min</th>
+                    <th>Postazione</th>
+                    <th>Finali</th>
+                  </tr>
                 </thead>
                 <tbody id="attendanceTableBody"></tbody>
               </table>
@@ -242,6 +251,25 @@
         </section>
       </section>
     </main>
+  </div>
+
+  <div id="confirmModal" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="confirmModalTitle">Conferma salvataggio</h2>
+          <p>Controlla il riepilogo per postazione prima di salvare definitivamente nel database.</p>
+        </div>
+        <button id="closeConfirmModalBtn" class="btn btn-secondary modal-close-btn" type="button">Chiudi</button>
+      </div>
+
+      <div id="confirmModalSummary" class="confirm-summary"></div>
+
+      <div class="actions split-actions modal-actions">
+        <button id="cancelConfirmBtn" class="btn btn-secondary" type="button">Annulla</button>
+        <button id="confirmSaveBtn" class="btn btn-primary" type="button">Conferma e salva</button>
+      </div>
+    </div>
   </div>
 </body>
 </html>

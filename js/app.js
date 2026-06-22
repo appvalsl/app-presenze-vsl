@@ -61,7 +61,7 @@ const InserimentoPresenzeApp = (() => {
     user: null,
     operators: [],
     operatorSearchIndex: [],
-    pendingSave: false,
+    lastOperatorsLoadError: '',
     setup: {
       lineName: '',
       workDate: '',
@@ -250,6 +250,7 @@ const InserimentoPresenzeApp = (() => {
     persistInputs.forEach((element) => {
       if (!element) return;
       const eventType = element.tagName === 'SELECT' ? 'change' : 'input';
+
       element.addEventListener(eventType, () => {
         readSetupFromForm();
         syncQuickButtons();
@@ -430,12 +431,20 @@ const InserimentoPresenzeApp = (() => {
       await loadOperatorsFromDatabase();
     }
 
+    if (!state.operators.length) {
+      const detail = state.lastOperatorsLoadError
+        ? ` Dettaglio: ${state.lastOperatorsLoadError}`
+        : ' Nessun record restituito dalla tabella operators. Verifica che la tabella sia popolata e che l’utente abbia permessi SELECT/RLS corretti.';
+      showBox(dom.wizardErrors, `Impossibile caricare gli operatori dal database.${detail}`, 'error');
+      return;
+    }
+
     const selectedLineNorm = normalizeText(state.setup.lineName);
     const filtered = state.operators.filter((operator) => normalizeText(operator.lineaProduzione) === selectedLineNorm);
     const dbLines = unique(state.operators.map((operator) => operator.lineaProduzione).filter(Boolean));
 
     if (!filtered.length) {
-      const dbLineText = dbLines.length ? dbLines.join(', ') : 'nessuna linea trovata nel DB';
+      const dbLineText = dbLines.length ? dbLines.join(', ') : 'nessuna linea valorizzata nei record operators';
       showBox(dom.wizardErrors, `Nessun operatore trovato per la linea selezionata. Linee presenti nel DB: ${dbLineText}`, 'error');
       return;
     }
@@ -509,7 +518,7 @@ const InserimentoPresenzeApp = (() => {
         stops_note: state.setup.stopsNote || '',
         base_work_minutes: Number(state.setup.baseWorkMinutes) || 0,
         base_net_minutes: Number(state.setup.baseNetMinutes) || 0,
-        created_by: state.user.email || state.user.id
+        created_by: state.user.id
       };
 
       const upsertResponse = await client
@@ -554,7 +563,7 @@ const InserimentoPresenzeApp = (() => {
         final_min: Number(row.final_min) || 0,
         dirty: Boolean(row.dirty),
         removed: Boolean(row.removed),
-        created_by: state.user.email || state.user.id
+        created_by: state.user.id
       }));
 
       const insertResponse = await client.from('attendance_rows').insert(rowsPayload);
@@ -576,8 +585,11 @@ const InserimentoPresenzeApp = (() => {
   async function loadOperatorsFromDatabase() {
     if (!client) return;
 
+    state.lastOperatorsLoadError = '';
+
     try {
       const response = await client.from('operators').select('*');
+
       if (response.error) throw response.error;
 
       const rawOperators = Array.isArray(response.data) ? response.data : [];
@@ -596,9 +608,14 @@ const InserimentoPresenzeApp = (() => {
 
       const uniqueLines = unique(state.operators.map((operator) => operator.lineaProduzione).filter(Boolean));
       console.log('Inserimento Presenze: linee trovate negli operators =', uniqueLines);
+
+      if (!rawOperators.length) {
+        state.lastOperatorsLoadError = 'La query sulla tabella operators ha restituito 0 righe.';
+      }
     } catch (error) {
       console.error('Errore caricamento operators:', error);
-      showBox(dom.globalMessage, `Errore caricamento operatori: ${error.message || 'errore sconosciuto'}`, 'error');
+      state.lastOperatorsLoadError = error.message || 'errore sconosciuto';
+      showBox(dom.globalMessage, `Errore caricamento operatori: ${state.lastOperatorsLoadError}`, 'error');
       state.operators = [];
       state.operatorSearchIndex = [];
       renderOperatorsDatalist();
@@ -1207,6 +1224,7 @@ const InserimentoPresenzeApp = (() => {
     const preservedUser = state.user;
     const preservedOperators = [...state.operators];
     const preservedSearchIndex = [...state.operatorSearchIndex];
+    const preservedLastError = state.lastOperatorsLoadError;
 
     sessionStorage.removeItem(STORAGE_KEY);
 
@@ -1215,7 +1233,7 @@ const InserimentoPresenzeApp = (() => {
     state.user = preservedUser;
     state.operators = preservedOperators;
     state.operatorSearchIndex = preservedSearchIndex;
-    state.pendingSave = false;
+    state.lastOperatorsLoadError = preservedLastError;
     state.setup = {
       lineName: '',
       workDate: '',
@@ -1381,7 +1399,7 @@ const InserimentoPresenzeApp = (() => {
     state.user = null;
     state.operators = [];
     state.operatorSearchIndex = [];
-    state.pendingSave = false;
+    state.lastOperatorsLoadError = '';
     state.setup = {
       lineName: '',
       workDate: '',

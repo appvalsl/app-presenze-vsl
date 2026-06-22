@@ -1,12 +1,4 @@
-console.log('Inserimento Presenze: app.js caricato');
-
-document.addEventListener('DOMContentLoaded', () => {
-  InserimentoPresenzeApp.init().catch((error) => {
-    console.error('Errore generale init:', error);
-  });
-});
-
-const InserimentoPresenzeApp = (() => {
+console.log('Inserimento Presenze: app.js caricato');console.log('Inserimento Pres InserimentoPresenzeApp = (() => {
   'use strict';
 
   const STORAGE_KEY = (window.APP_CONFIG && window.APP_CONFIG.STORAGE_KEY) || 'inserimento-presenze-state';
@@ -57,8 +49,10 @@ const InserimentoPresenzeApp = (() => {
 
   const state = {
     currentStep: 1,
+    activeMainView: 'attendance',
     activeView: 'setup',
     user: null,
+    currentUserProfile: null,
     operators: [],
     operatorSearchIndex: [],
     lastOperatorsLoadError: '',
@@ -75,7 +69,12 @@ const InserimentoPresenzeApp = (() => {
       baseWorkMinutes: 0,
       baseNetMinutes: 0
     },
-    rows: []
+    rows: [],
+    operatorsAdmin: {
+      searchText: '',
+      lineFilter: '',
+      statusFilter: 'active'
+    }
   };
 
   const dom = {};
@@ -86,11 +85,16 @@ const InserimentoPresenzeApp = (() => {
     dom.globalMessage = document.getElementById('globalMessage');
     dom.userBadge = document.getElementById('userBadge');
     dom.logoutBtn = document.getElementById('logoutBtn');
+    dom.openAttendanceBtn = document.getElementById('openAttendanceBtn');
+    dom.openOperatorsBtn = document.getElementById('openOperatorsBtn');
 
     dom.emailInput = document.getElementById('emailInput');
     dom.passwordInput = document.getElementById('passwordInput');
     dom.loginBtn = document.getElementById('loginBtn');
     dom.authErrors = document.getElementById('authErrors');
+
+    dom.attendanceView = document.getElementById('attendanceView');
+    dom.operatorsAdminView = document.getElementById('operatorsAdminView');
 
     dom.setupView = document.getElementById('setupView');
     dom.rowsView = document.getElementById('rowsView');
@@ -134,6 +138,34 @@ const InserimentoPresenzeApp = (() => {
     dom.closeConfirmModalBtn = document.getElementById('closeConfirmModalBtn');
     dom.cancelConfirmBtn = document.getElementById('cancelConfirmBtn');
     dom.confirmSaveBtn = document.getElementById('confirmSaveBtn');
+
+    dom.operatorsAdminMessage = document.getElementById('operatorsAdminMessage');
+    dom.operatorsSearchInput = document.getElementById('operatorsSearchInput');
+    dom.operatorsLineFilter = document.getElementById('operatorsLineFilter');
+    dom.operatorsStatusFilter = document.getElementById('operatorsStatusFilter');
+    dom.refreshOperatorsBtn = document.getElementById('refreshOperatorsBtn');
+    dom.newOperatorBtn = document.getElementById('newOperatorBtn');
+    dom.operatorsAdminStats = document.getElementById('operatorsAdminStats');
+    dom.operatorsAdminTableBody = document.getElementById('operatorsAdminTableBody');
+
+    dom.operatorModal = document.getElementById('operatorModal');
+    dom.operatorModalTitle = document.getElementById('operatorModalTitle');
+    dom.operatorModalMessage = document.getElementById('operatorModalMessage');
+    dom.closeOperatorModalBtn = document.getElementById('closeOperatorModalBtn');
+    dom.cancelOperatorModalBtn = document.getElementById('cancelOperatorModalBtn');
+    dom.saveOperatorBtn = document.getElementById('saveOperatorBtn');
+
+    dom.operatorFormId = document.getElementById('operatorFormId');
+    dom.operatorSurnameInput = document.getElementById('operatorSurnameInput');
+    dom.operatorNameInput = document.getElementById('operatorNameInput');
+    dom.operatorIdCodeInput = document.getElementById('operatorIdCodeInput');
+    dom.operatorCdcInput = document.getElementById('operatorCdcInput');
+    dom.operatorLineInput = document.getElementById('operatorLineInput');
+    dom.operatorMacroLineInput = document.getElementById('operatorMacroLineInput');
+    dom.operatorStationInput = document.getElementById('operatorStationInput');
+    dom.operatorStandardHoursInput = document.getElementById('operatorStandardHoursInput');
+    dom.operatorPlantInput = document.getElementById('operatorPlantInput');
+    dom.operatorIsActiveInput = document.getElementById('operatorIsActiveInput');
   }
 
   async function init() {
@@ -153,6 +185,7 @@ const InserimentoPresenzeApp = (() => {
 
     if (sessionUser) {
       state.user = sessionUser;
+      await loadCurrentUserProfile();
       showAuthenticatedUI();
       await loadOperatorsFromDatabase();
       renderAll();
@@ -166,6 +199,25 @@ const InserimentoPresenzeApp = (() => {
   function bindEvents() {
     if (dom.loginBtn) dom.loginBtn.addEventListener('click', handleLogin);
     if (dom.logoutBtn) dom.logoutBtn.addEventListener('click', handleLogout);
+
+    if (dom.openAttendanceBtn) {
+      dom.openAttendanceBtn.addEventListener('click', () => {
+        state.activeMainView = 'attendance';
+        renderAll();
+      });
+    }
+
+    if (dom.openOperatorsBtn) {
+      dom.openOperatorsBtn.addEventListener('click', () => {
+        if (!canManageOperators()) {
+          showBox(dom.globalMessage, 'Non sei autorizzato a gestire gli operatori.', 'error');
+          return;
+        }
+        state.activeMainView = 'operators';
+        renderAll();
+      });
+    }
+
     if (dom.wizardBackBtn) dom.wizardBackBtn.addEventListener('click', handleWizardBack);
     if (dom.wizardNextBtn) dom.wizardNextBtn.addEventListener('click', handleWizardNext);
     if (dom.loadOperatorsBtn) dom.loadOperatorsBtn.addEventListener('click', handleLoadOperatorsForLine);
@@ -249,6 +301,58 @@ const InserimentoPresenzeApp = (() => {
       dom.attendanceTableBody.addEventListener('input', handleRowTableInteraction);
       dom.attendanceTableBody.addEventListener('change', handleRowTableInteraction);
     }
+
+    if (dom.operatorsSearchInput) {
+      dom.operatorsSearchInput.addEventListener('input', () => {
+        state.operatorsAdmin.searchText = dom.operatorsSearchInput.value || '';
+        renderOperatorsAdmin();
+      });
+    }
+
+    if (dom.operatorsLineFilter) {
+      dom.operatorsLineFilter.addEventListener('change', () => {
+        state.operatorsAdmin.lineFilter = dom.operatorsLineFilter.value || '';
+        renderOperatorsAdmin();
+      });
+    }
+
+    if (dom.operatorsStatusFilter) {
+      dom.operatorsStatusFilter.addEventListener('change', () => {
+        state.operatorsAdmin.statusFilter = dom.operatorsStatusFilter.value || 'active';
+        renderOperatorsAdmin();
+      });
+    }
+
+    if (dom.refreshOperatorsBtn) {
+      dom.refreshOperatorsBtn.addEventListener('click', async () => {
+        await loadOperatorsFromDatabase();
+        renderAll();
+      });
+    }
+
+    if (dom.newOperatorBtn) {
+      dom.newOperatorBtn.addEventListener('click', () => {
+        if (!canManageOperators()) {
+          showBox(dom.operatorsAdminMessage, 'Non sei autorizzato a gestire gli operatori.', 'error');
+          return;
+        }
+        openOperatorModalForCreate();
+      });
+    }
+
+    if (dom.operatorsAdminTableBody) {
+      dom.operatorsAdminTableBody.addEventListener('click', handleOperatorsAdminTableClick);
+    }
+
+    if (dom.closeOperatorModalBtn) dom.closeOperatorModalBtn.addEventListener('click', closeOperatorModal);
+    if (dom.cancelOperatorModalBtn) dom.cancelOperatorModalBtn.addEventListener('click', closeOperatorModal);
+    if (dom.saveOperatorBtn) dom.saveOperatorBtn.addEventListener('click', handleSaveOperator);
+
+    if (dom.operatorModal) {
+      dom.operatorModal.addEventListener('click', (event) => {
+        if (event.target === dom.operatorModal) closeOperatorModal();
+      });
+    }
   }
 
   async function getAuthenticatedUser() {
@@ -263,16 +367,74 @@ const InserimentoPresenzeApp = (() => {
     }
   }
 
+  async function loadCurrentUserProfile() {
+    if (!state.user || !state.user.id) {
+      state.currentUserProfile = null;
+      return;
+    }
+
+    try {
+      const { data, error } = await client
+        .from('app_users')
+        .select('user_id, email, role, can_manage_operators, is_active')
+        .eq('user_id', state.user.id)
+        .single();
+
+      if (error) {
+        console.warn('Profilo app_users non trovato o non leggibile:', error.message);
+        state.currentUserProfile = {
+          user_id: state.user.id,
+          email: state.user.email || '',
+          role: 'user',
+          can_manage_operators: false,
+          is_active: true
+        };
+        return;
+      }
+
+      state.currentUserProfile = data || {
+        user_id: state.user.id,
+        email: state.user.email || '',
+        role: 'user',
+        can_manage_operators: false,
+        is_active: true
+      };
+    } catch (error) {
+      console.error('Errore caricamento profilo utente:', error);
+      state.currentUserProfile = {
+        user_id: state.user.id,
+        email: state.user.email || '',
+        role: 'user',
+        can_manage_operators: false,
+        is_active: true
+      };
+    }
+  }
+
+  function canManageOperators() {
+    return Boolean(
+      state.currentUserProfile &&
+      state.currentUserProfile.is_active === true &&
+      state.currentUserProfile.can_manage_operators === true
+    );
+  }
+
   function showAuthenticatedUI() {
     if (dom.authSection) dom.authSection.classList.add('hidden');
     if (dom.appSection) dom.appSection.classList.remove('hidden');
 
     if (dom.userBadge) {
-      dom.userBadge.textContent = state.user && state.user.email ? state.user.email : 'Utente autenticato';
+      const roleText = state.currentUserProfile && state.currentUserProfile.role
+        ? ` (${state.currentUserProfile.role})`
+        : '';
+      dom.userBadge.textContent = `${state.user && state.user.email ? state.user.email : 'Utente autenticato'}${roleText}`;
       dom.userBadge.classList.remove('hidden');
     }
 
     if (dom.logoutBtn) dom.logoutBtn.classList.remove('hidden');
+    if (dom.openAttendanceBtn) dom.openAttendanceBtn.classList.remove('hidden');
+
+    renderPermissions();
     hideBox(dom.authErrors);
   }
 
@@ -286,7 +448,34 @@ const InserimentoPresenzeApp = (() => {
     }
 
     if (dom.logoutBtn) dom.logoutBtn.classList.add('hidden');
+    if (dom.openAttendanceBtn) dom.openAttendanceBtn.classList.add('hidden');
+    if (dom.openOperatorsBtn) dom.openOperatorsBtn.classList.add('hidden');
+
     hideBox(dom.globalMessage);
+  }
+
+  function renderPermissions() {
+    const adminAllowed = canManageOperators();
+
+    if (dom.openOperatorsBtn) {
+      dom.openOperatorsBtn.classList.toggle('hidden', !adminAllowed);
+    }
+
+    if (dom.newOperatorBtn) {
+      dom.newOperatorBtn.classList.toggle('hidden', !adminAllowed);
+    }
+
+    if (!adminAllowed && state.activeMainView === 'operators') {
+      state.activeMainView = 'attendance';
+    }
+
+    if (dom.attendanceView) {
+      dom.attendanceView.classList.toggle('hidden', state.activeMainView !== 'attendance');
+    }
+
+    if (dom.operatorsAdminView) {
+      dom.operatorsAdminView.classList.toggle('hidden', state.activeMainView !== 'operators' || !adminAllowed);
+    }
   }
 
   async function handleLogin() {
@@ -320,6 +509,7 @@ const InserimentoPresenzeApp = (() => {
       }
 
       state.user = data.user;
+      await loadCurrentUserProfile();
       showAuthenticatedUI();
       await loadOperatorsFromDatabase();
       renderAll();
@@ -348,6 +538,7 @@ const InserimentoPresenzeApp = (() => {
       renderSetupForm();
       renderRowsView();
       closeConfirmModal();
+      closeOperatorModal();
     }
   }
 
@@ -408,17 +599,19 @@ const InserimentoPresenzeApp = (() => {
       await loadOperatorsFromDatabase();
     }
 
-    if (!state.operators.length) {
+    const activeOperators = state.operators.filter((operator) => operator.isActive !== false);
+
+    if (!activeOperators.length) {
       const detail = state.lastOperatorsLoadError
         ? ` Dettaglio: ${state.lastOperatorsLoadError}`
-        : ' Nessun record restituito dalla tabella operators.';
+        : ' Nessun record attivo restituito dalla tabella operators.';
       showBox(dom.wizardErrors, `Impossibile caricare gli operatori dal database.${detail}`, 'error');
       return;
     }
 
     const selectedLineNorm = normalizeText(state.setup.lineName);
-    const filtered = state.operators.filter((operator) => normalizeText(operator.lineaProduzione) === selectedLineNorm);
-    const dbLines = unique(state.operators.map((operator) => operator.lineaProduzione).filter(Boolean));
+    const filtered = activeOperators.filter((operator) => normalizeText(operator.lineaProduzione) === selectedLineNorm);
+    const dbLines = unique(activeOperators.map((operator) => operator.lineaProduzione).filter(Boolean));
 
     if (!filtered.length) {
       const dbLineText = dbLines.length ? dbLines.join(', ') : 'nessuna linea valorizzata nei record operators';
@@ -428,6 +621,7 @@ const InserimentoPresenzeApp = (() => {
 
     state.rows = filtered.map((operator, index) => buildAttendanceRow(operator, index));
     state.activeView = 'rows';
+    state.activeMainView = 'attendance';
     saveState();
     renderAll();
 
@@ -574,7 +768,7 @@ const InserimentoPresenzeApp = (() => {
     state.lastOperatorsLoadError = '';
 
     try {
-      const response = await client.from('operators').select('*');
+      const response = await client.from('operators').select('*').order('cognome', { ascending: true });
       if (response.error) throw response.error;
 
       const rawOperators = Array.isArray(response.data) ? response.data : [];
@@ -583,12 +777,15 @@ const InserimentoPresenzeApp = (() => {
         .map(mapOperatorRow)
         .filter((row) => row.id !== null || row.nome || row.cognome);
 
-      state.operatorSearchIndex = state.operators.map((operator) => ({
-        key: buildOperatorSearchLabel(operator),
-        operator
-      }));
+      state.operatorSearchIndex = state.operators
+        .filter((operator) => operator.isActive !== false)
+        .map((operator) => ({
+          key: buildOperatorSearchLabel(operator),
+          operator
+        }));
 
       renderOperatorsDatalist();
+      renderOperatorsFilters();
 
       if (!rawOperators.length) {
         state.lastOperatorsLoadError = 'La query sulla tabella operators ha restituito 0 righe.';
@@ -600,6 +797,7 @@ const InserimentoPresenzeApp = (() => {
       state.operators = [];
       state.operatorSearchIndex = [];
       renderOperatorsDatalist();
+      renderOperatorsFilters();
     }
   }
 
@@ -611,11 +809,33 @@ const InserimentoPresenzeApp = (() => {
       .join('');
   }
 
+  function renderOperatorsFilters() {
+    if (!dom.operatorsLineFilter) return;
+
+    const lines = unique(
+      state.operators
+        .map((operator) => operator.lineaProduzione)
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, 'it'))
+    );
+
+    const current = state.operatorsAdmin.lineFilter || '';
+
+    dom.operatorsLineFilter.innerHTML = `
+      <option value="">Tutte le linee</option>
+      ${lines.map((line) => `<option value="${escapeAttribute(line)}">${escapeHtml(line)}</option>`).join('')}
+    `;
+
+    dom.operatorsLineFilter.value = current;
+  }
+
   function handleAddOperator() {
     hideBox(dom.rowsErrors);
     hideBox(dom.globalMessage);
 
-    if (!state.operators.length) {
+    const activeOperators = state.operators.filter((operator) => operator.isActive !== false);
+
+    if (!activeOperators.length) {
       showBox(dom.rowsErrors, 'Nessun operatore disponibile nel database.', 'error');
       return;
     }
@@ -649,6 +869,7 @@ const InserimentoPresenzeApp = (() => {
     state.rows.push(newRow);
     reorderRows();
     state.activeView = 'rows';
+    state.activeMainView = 'attendance';
     saveState();
     renderRowsView();
 
@@ -683,6 +904,7 @@ const InserimentoPresenzeApp = (() => {
     const postazione = firstDefined(row, ['postazione', 'station', 'stazione']) || '';
     const oreStandardRaw = firstDefined(row, ['oreStandard', 'ore_standard', 'orestandard', 'standard_hours']);
     const stabilimento = firstDefined(row, ['stabilimento', 'stabilimento_nome']) || '';
+    const isActiveRaw = firstDefined(row, ['is_active', 'isactive']);
 
     return {
       id: id !== undefined ? id : null,
@@ -699,7 +921,8 @@ const InserimentoPresenzeApp = (() => {
         oreStandardRaw === ''
           ? 0
           : Number(oreStandardRaw),
-      stabilimento: String(stabilimento).trim()
+      stabilimento: String(stabilimento).trim(),
+      isActive: isActiveRaw === undefined || isActiveRaw === null ? true : Boolean(isActiveRaw)
     };
   }
 
@@ -843,12 +1066,14 @@ const InserimentoPresenzeApp = (() => {
   }
 
   function renderAll() {
+    renderPermissions();
     renderSetupForm();
     renderWizard();
     renderSetupSummary();
     renderRowsSetupSummary();
     renderRowsView();
     renderOperatorsDatalist();
+    renderOperatorsAdmin();
   }
 
   function renderSetupForm() {
@@ -1007,6 +1232,318 @@ const InserimentoPresenzeApp = (() => {
         `;
       })
       .join('');
+  }
+
+  function renderOperatorsAdmin() {
+    if (!dom.operatorsAdminView || !canManageOperators()) return;
+    if (!dom.operatorsAdminTableBody || !dom.operatorsAdminStats) return;
+
+    const allOperators = [...state.operators];
+    const searchText = normalizeText(state.operatorsAdmin.searchText || '');
+    const lineFilter = normalizeText(state.operatorsAdmin.lineFilter || '');
+    const statusFilter = state.operatorsAdmin.statusFilter || 'active';
+
+    const filtered = allOperators.filter((operator) => {
+      const lineOk = !lineFilter || normalizeText(operator.lineaProduzione) === lineFilter;
+
+      let statusOk = true;
+      if (statusFilter === 'active') statusOk = operator.isActive !== false;
+      if (statusFilter === 'inactive') statusOk = operator.isActive === false;
+
+      const haystack = normalizeText([
+        operator.cognome,
+        operator.nome,
+        operator.idOperatore,
+        operator.idCdc,
+        operator.lineaProduzione,
+        operator.macroLineaProduzione
+      ].join(' '));
+
+      const searchOk = !searchText || haystack.includes(searchText);
+
+      return lineOk && statusOk && searchOk;
+    });
+
+    const activeCount = allOperators.filter((operator) => operator.isActive !== false).length;
+    const inactiveCount = allOperators.filter((operator) => operator.isActive === false).length;
+    const linesCount = unique(allOperators.map((operator) => operator.lineaProduzione).filter(Boolean)).length;
+
+    dom.operatorsAdminStats.innerHTML = `
+      <div class="summary-item">
+        <span class="label">Totale operatori</span>
+        <span class="value">${escapeHtml(String(allOperators.length))}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Operatori attivi</span>
+        <span class="value">${escapeHtml(String(activeCount))}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Operatori non attivi</span>
+        <span class="value">${escapeHtml(String(inactiveCount))}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Linee presenti</span>
+        <span class="value">${escapeHtml(String(linesCount))}</span>
+      </div>
+    `;
+
+    if (!filtered.length) {
+      dom.operatorsAdminTableBody.innerHTML = `
+        <tr>
+          <td colspan="10"><div class="muted">Nessun operatore trovato con i filtri selezionati.</div></td>
+        </tr>
+      `;
+      return;
+    }
+
+    dom.operatorsAdminTableBody.innerHTML = filtered
+      .map((operator) => {
+        const badge = operator.isActive !== false
+          ? '<span class="badge-active">Attivo</span>'
+          : '<span class="badge-inactive">Non attivo</span>';
+
+        const toggleLabel = operator.isActive !== false ? 'Disattiva' : 'Riattiva';
+
+        return `
+          <tr>
+            <td>${escapeHtml(operator.cognome || '-')}</td>
+            <td>${escapeHtml(operator.nome || '-')}</td>
+            <td>${escapeHtml(operator.idOperatore || '-')}</td>
+            <td>${escapeHtml(operator.idCdc || '-')}</td>
+            <td>${escapeHtml(operator.lineaProduzione || '-')}</td>
+            <td>${escapeHtml(operator.macroLineaProduzione || '-')}</td>
+            <td>${escapeHtml(operator.postazione || '-')}</td>
+            <td>${escapeHtml(String(Number(operator.oreStandard) || 0))}</td>
+            <td>${badge}</td>
+            <td>
+              <div class="table-actions">
+                <button class="btn btn-secondary btn-small" type="button" data-action="edit-operator" data-id="${escapeAttribute(String(operator.id))} data-id="${escapeAttribute(String(operator.id)) </tr>
+        `;
+      })
+      .join('');
+  }
+
+  function handleOperatorsAdminTableClick(event) {
+    const button = event.target.closest('button[data-action]');
+    if (!button) return;
+
+    if (!canManageOperators()) {
+      showBox(dom.operatorsAdminMessage, 'Non sei autorizzato a gestire gli operatori.', 'error');
+      return;
+    }
+
+    const action = button.dataset.action;
+    const id = button.dataset.id;
+
+    if (!id) return;
+
+    const operator = state.operators.find((item) => String(item.id) === String(id));
+    if (!operator) {
+      showBox(dom.operatorsAdminMessage, 'Operatore non trovato.', 'error');
+      return;
+    }
+
+    if (action === 'edit-operator') {
+      openOperatorModalForEdit(operator);
+      return;
+    }
+
+    if (action === 'toggle-operator') {
+      handleToggleOperatorActive(operator);
+    }
+  }
+
+  function openOperatorModalForCreate() {
+    if (!dom.operatorModal) return;
+
+    if (dom.operatorModalTitle) dom.operatorModalTitle.textContent = 'Nuovo operatore';
+    if (dom.operatorFormId) dom.operatorFormId.value = '';
+    if (dom.operatorSurnameInput) dom.operatorSurnameInput.value = '';
+    if (dom.operatorNameInput) dom.operatorNameInput.value = '';
+    if (dom.operatorIdCodeInput) dom.operatorIdCodeInput.value = '';
+    if (dom.operatorCdcInput) dom.operatorCdcInput.value = '';
+    if (dom.operatorLineInput) dom.operatorLineInput.value = '';
+    if (dom.operatorMacroLineInput) dom.operatorMacroLineInput.value = '';
+    if (dom.operatorStationInput) dom.operatorStationInput.value = '';
+    if (dom.operatorStandardHoursInput) dom.operatorStandardHoursInput.value = '0';
+    if (dom.operatorPlantInput) dom.operatorPlantInput.value = '';
+    if (dom.operatorIsActiveInput) dom.operatorIsActiveInput.value = 'true';
+
+    hideBox(dom.operatorModalMessage);
+
+    dom.operatorModal.classList.remove('hidden');
+    dom.operatorModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function openOperatorModalForEdit(operator) {
+    if (!dom.operatorModal) return;
+
+    if (dom.operatorModalTitle) dom.operatorModalTitle.textContent = 'Modifica operatore';
+    if (dom.operatorFormId) dom.operatorFormId.value = String(operator.id ?? '');
+    if (dom.operatorSurnameInput) dom.operatorSurnameInput.value = operator.cognome || '';
+    if (dom.operatorNameInput) dom.operatorNameInput.value = operator.nome || '';
+    if (dom.operatorIdCodeInput) dom.operatorIdCodeInput.value = operator.idOperatore || '';
+    if (dom.operatorCdcInput) dom.operatorCdcInput.value = operator.idCdc || '';
+    if (dom.operatorLineInput) dom.operatorLineInput.value = operator.lineaProduzione || '';
+    if (dom.operatorMacroLineInput) dom.operatorMacroLineInput.value = operator.macroLineaProduzione || '';
+    if (dom.operatorStationInput) dom.operatorStationInput.value = operator.postazione || '';
+    if (dom.operatorStandardHoursInput) dom.operatorStandardHoursInput.value = String(Number(operator.oreStandard) || 0);
+    if (dom.operatorPlantInput) dom.operatorPlantInput.value = operator.stabilimento || '';
+    if (dom.operatorIsActiveInput) dom.operatorIsActiveInput.value = operator.isActive !== false ? 'true' : 'false';
+
+    hideBox(dom.operatorModalMessage);
+
+    dom.operatorModal.classList.remove('hidden');
+    dom.operatorModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeOperatorModal() {
+    if (!dom.operatorModal) return;
+    dom.operatorModal.classList.add('hidden');
+    dom.operatorModal.setAttribute('aria-hidden', 'true');
+    hideBox(dom.operatorModalMessage);
+  }
+
+  async function handleSaveOperator() {
+    if (!canManageOperators()) {
+      showBox(dom.operatorsAdminMessage, 'Non sei autorizzato a gestire gli operatori.', 'error');
+      return;
+    }
+
+    const payload = getOperatorFormPayload();
+    if (!payload.ok) {
+      showBox(dom.operatorModalMessage, payload.message, 'error');
+      return;
+    }
+
+    if (dom.saveOperatorBtn) {
+      dom.saveOperatorBtn.disabled = true;
+      dom.saveOperatorBtn.textContent = 'Salvataggio...';
+    }
+
+    try {
+      const operatorId = dom.operatorFormId?.value || '';
+      let response;
+
+      if (operatorId) {
+        response = await client
+          .from('operators')
+          .update({
+            cognome: payload.data.cognome,
+            nome: payload.data.nome,
+            idoperatore: payload.data.idoperatore,
+            idcdc: payload.data.idcdc,
+            lineaproduzione: payload.data.lineaproduzione,
+            macrolineaproduzione: payload.data.macrolineaproduzione,
+            postazione: payload.data.postazione,
+            orestandard: payload.data.orestandard,
+            stabilimento: payload.data.stabilimento,
+            is_active: payload.data.is_active,
+            updated_by: state.user.id
+          })
+          .eq('id', operatorId)
+          .select();
+      } else {
+        response = await client
+          .from('operators')
+          .insert({
+            cognome: payload.data.cognome,
+            nome: payload.data.nome,
+            idoperatore: payload.data.idoperatore,
+            idcdc: payload.data.idcdc,
+            lineaproduzione: payload.data.lineaproduzione,
+            macrolineaproduzione: payload.data.macrolineaproduzione,
+            postazione: payload.data.postazione,
+            orestandard: payload.data.orestandard,
+            stabilimento: payload.data.stabilimento,
+            is_active: payload.data.is_active,
+            created_by: state.user.id,
+            updated_by: state.user.id
+          })
+          .select();
+      }
+
+      if (response.error) throw response.error;
+
+      await loadOperatorsFromDatabase();
+      renderAll();
+      closeOperatorModal();
+      showBox(dom.operatorsAdminMessage, 'Operatore salvato correttamente.', 'success');
+    } catch (error) {
+      console.error('Errore salvataggio operatore:', error);
+      showBox(dom.operatorModalMessage, error.message || 'Errore durante il salvataggio operatore.', 'error');
+    } finally {
+      if (dom.saveOperatorBtn) {
+        dom.saveOperatorBtn.disabled = false;
+        dom.saveOperatorBtn.textContent = 'Salva operatore';
+      }
+    }
+  }
+
+  function getOperatorFormPayload() {
+    const cognome = (dom.operatorSurnameInput?.value || '').trim();
+    const nome = (dom.operatorNameInput?.value || '').trim();
+    const idoperatore = (dom.operatorIdCodeInput?.value || '').trim();
+    const idcdc = (dom.operatorCdcInput?.value || '').trim();
+    const lineaproduzione = (dom.operatorLineInput?.value || '').trim();
+    const macrolineaproduzione = (dom.operatorMacroLineInput?.value || '').trim();
+    const postazione = (dom.operatorStationInput?.value || '').trim();
+    const orestandard = toNonNegativeNumber(dom.operatorStandardHoursInput?.value || 0);
+    const stabilimento = (dom.operatorPlantInput?.value || '').trim();
+    const is_active = String(dom.operatorIsActiveInput?.value || 'true') === 'true';
+
+    if (!cognome) return { ok: false, message: 'Il cognome è obbligatorio.' };
+    if (!nome) return { ok: false, message: 'Il nome è obbligatorio.' };
+    if (!idoperatore) return { ok: false, message: 'L\'ID operatore è obbligatorio.' };
+    if (!lineaproduzione) return { ok: false, message: 'La linea di produzione è obbligatoria.' };
+
+    return {
+      ok: true,
+      data: {
+        cognome,
+        nome,
+        idoperatore,
+        idcdc,
+        lineaproduzione,
+        macrolineaproduzione,
+        postazione,
+        orestandard,
+        stabilimento,
+        is_active
+      }
+    };
+  }
+
+  async function handleToggleOperatorActive(operator) {
+    if (!canManageOperators()) {
+      showBox(dom.operatorsAdminMessage, 'Non sei autorizzato a gestire gli operatori.', 'error');
+      return;
+    }
+
+    try {
+      const response = await client
+        .from('operators')
+        .update({
+          is_active: !(operator.isActive !== false),
+          updated_by: state.user.id
+        })
+        .eq('id', operator.id)
+        .select();
+
+      if (response.error) throw response.error;
+
+      await loadOperatorsFromDatabase();
+      renderAll();
+
+      const text = operator.isActive !== false
+        ? 'Operatore disattivato correttamente.'
+        : 'Operatore riattivato correttamente.';
+
+      showBox(dom.operatorsAdminMessage, text, 'success');
+    } catch (error) {
+      console.error('Errore cambio stato operatore:', error);
+      showBox(dom.operatorsAdminMessage, error.message || 'Errore durante il cambio stato operatore.', 'error');
+    }
   }
 
   function openConfirmModal() {
@@ -1177,6 +1714,7 @@ const InserimentoPresenzeApp = (() => {
 
   function resetAfterSuccessfulSave() {
     const preservedUser = state.user;
+    const preservedProfile = state.currentUserProfile;
     const preservedOperators = [...state.operators];
     const preservedSearchIndex = [...state.operatorSearchIndex];
     const preservedLastError = state.lastOperatorsLoadError;
@@ -1184,8 +1722,10 @@ const InserimentoPresenzeApp = (() => {
     sessionStorage.removeItem(STORAGE_KEY);
 
     state.currentStep = 1;
+    state.activeMainView = 'attendance';
     state.activeView = 'setup';
     state.user = preservedUser;
+    state.currentUserProfile = preservedProfile;
     state.operators = preservedOperators;
     state.operatorSearchIndex = preservedSearchIndex;
     state.lastOperatorsLoadError = preservedLastError;
@@ -1267,6 +1807,12 @@ const InserimentoPresenzeApp = (() => {
     return number;
   }
 
+  function toNonNegativeNumber(value) {
+    const number = parseFloat(String(value).replace(',', '.'));
+    if (!Number.isFinite(number) || number < 0) return 0;
+    return number;
+  }
+
   function normalizeText(value) {
     return String(value || '').trim().replace(/\s+/g, ' ').toUpperCase();
   }
@@ -1342,8 +1888,10 @@ const InserimentoPresenzeApp = (() => {
     sessionStorage.removeItem(STORAGE_KEY);
 
     state.currentStep = 1;
+    state.activeMainView = 'attendance';
     state.activeView = 'setup';
     state.user = null;
+    state.currentUserProfile = null;
     state.operators = [];
     state.operatorSearchIndex = [];
     state.lastOperatorsLoadError = '';
@@ -1361,15 +1909,25 @@ const InserimentoPresenzeApp = (() => {
       baseNetMinutes: 0
     };
     state.rows = [];
+    state.operatorsAdmin = {
+      searchText: '',
+      lineFilter: '',
+      statusFilter: 'active'
+    };
 
     hideBox(dom.authErrors);
     hideBox(dom.wizardErrors);
     hideBox(dom.rowsErrors);
     hideBox(dom.globalMessage);
+    hideBox(dom.operatorsAdminMessage);
+    hideBox(dom.operatorModalMessage);
 
     if (dom.emailInput) dom.emailInput.value = '';
     if (dom.passwordInput) dom.passwordInput.value = '';
     if (dom.addOperatorSearch) dom.addOperatorSearch.value = '';
+    if (dom.operatorsSearchInput) dom.operatorsSearchInput.value = '';
+    if (dom.operatorsLineFilter) dom.operatorsLineFilter.value = '';
+    if (dom.operatorsStatusFilter) dom.operatorsStatusFilter.value = 'active';
   }
 
   function clampStep(step) {
@@ -1407,3 +1965,10 @@ const InserimentoPresenzeApp = (() => {
 
   return { init };
 })();
+
+document.addEventListener('DOMContentLoaded', () => {
+  InserimentoPresenzeApp.init().catch((error) => {
+    console.error('Errore generale init:', error);
+  });
+});
+

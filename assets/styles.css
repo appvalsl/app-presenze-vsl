@@ -10,6 +10,7 @@
   --secondary: #eef2f7;
   --success: #0f9f5f;
   --error: #d93a3a;
+  --info: #0b64c0;
   --shadow: 0 12px 28px rgba(16, 24, 40, 0.08);
   --radius: 18px;
   --focus: 0 0 0 4px rgba(20, 80, 210, 0.14);
@@ -125,16 +126,28 @@ body {
   padding: 22px;
 }
 
+.inline-card {
+  margin: 18px 0 16px;
+  padding: 18px;
+  background: #fafcff;
+}
+
 .card-header h2,
 .rows-top h2,
-.wizard-title-wrap h2 {
+.wizard-title-wrap h2,
+.card-header h3 {
   margin: 0;
   font-size: 1.4rem;
 }
 
+.compact-header h3 {
+  font-size: 1.12rem;
+}
+
 .card-header p,
 .rows-top p,
-.wizard-title-wrap p {
+.wizard-title-wrap p,
+.compact-header p {
   margin: 8px 0 0;
   color: var(--muted);
   line-height: 1.45;
@@ -265,21 +278,21 @@ textarea:focus {
 }
 
 .message.error {
-  background: #fff1f1;
-  color: #8a1f1f;
-  border-color: #f2b1b1;
+  color: #7d1010;
+  background: #fff2f2;
+  border-color: #f3c5c5;
 }
 
 .message.success {
-  background: #eefaf4;
-  color: #0e6d43;
-  border-color: #b9e8cf;
+  color: #0e6a41;
+  background: #edf9f2;
+  border-color: #b8e2ca;
 }
 
 .message.info {
-  background: #eef5ff;
-  color: #18437b;
-  border-color: #c7dbff;
+  color: #0b4c92;
+  background: #eef6ff;
+  border-color: #c9defb;
 }
 
 .wizard-top {
@@ -351,14 +364,14 @@ textarea:focus {
 }
 
 .quick-btn:hover {
-  border-color: #a8bfdc;
-  background: #f8fbff;
+  border-color: #b6cae9;
+  background: #f7fbff;
 }
 
 .quick-btn.is-active {
-  border-color: #2f6aff;
-  background: #eaf2ff;
-  color: #1144a6;
+  background: #ebf3ff;
+  border-color: #b6d0ff;
+  color: var(--primary-dark);
 }
 
 .wizard-nav {
@@ -424,6 +437,21 @@ textarea:focus {
   border: 1px solid #d5e4ff;
   color: #2654b7;
   font-weight: 700;
+}
+
+.add-operator-panel {
+  border-style: dashed;
+}
+
+.add-operator-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 16px;
+  align-items: end;
+}
+
+.add-operator-btn-wrap {
+  justify-content: flex-end;
 }
 
 .table-wrap {
@@ -514,6 +542,111 @@ textarea:focus {
   color: var(--muted);
 }
 
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-card {
+  width: min(980px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid rgba(217, 225, 236, 0.95);
+  box-shadow: 0 18px 40px rgba(16, 24, 40, 0.18);
+  padding: 22px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.modal-header p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.modal-close-btn {
+  flex-shrink: 0;
+}
+
+.modal-actions {
+  margin-top: 22px;
+}
+
+.confirm-summary {
+  display: grid;
+  gap: 14px;
+}
+
+.confirm-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fafcff;
+  padding: 16px;
+}
+
+.confirm-card-title {
+  margin: 0 0 12px;
+  font-size: 1.06rem;
+}
+
+.confirm-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.confirm-kpi {
+  background: #fff;
+  border: 1px solid #e0e8f3;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.confirm-kpi-label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.confirm-kpi-value {
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.confirm-names {
+  font-size: 0.92rem;
+  color: #324256;
+  line-height: 1.5;
+}
+
+.confirm-total {
+  border: 1px solid #cfe0ff;
+  background: #f3f8ff;
+}
+
 @media (max-width: 860px) {
   .page {
     padding: 18px 12px 28px;
@@ -525,7 +658,9 @@ textarea:focus {
   }
 
   .form-grid,
-  .summary-box {
+  .summary-box,
+  .confirm-kpis,
+  .add-operator-grid {
     grid-template-columns: 1fr;
   }
 
@@ -560,5 +695,9 @@ textarea:focus {
 
   .btn {
     width: 100%;
+  }
+
+  .modal-card {
+    padding: 16px;
   }
 }

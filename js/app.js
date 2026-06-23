@@ -209,6 +209,17 @@ const InserimentoPresenzeApp = (() => {
   }
 
   function bindEvents() {
+
+const toggle = document.getElementById("menuToggle");
+const menu = document.getElementById("topbarMenu");
+
+if (toggle) {
+  toggle.addEventListener("click", () => {
+    menu.classList.toggle("open");
+  });
+}
+
+    
     if (dom.loginBtn) {
       dom.loginBtn.addEventListener("click", handleLogin);
     }
@@ -348,6 +359,8 @@ const InserimentoPresenzeApp = (() => {
       });
     }
 
+    
+
     if (dom.operatorsAdminTableBody) {
       dom.operatorsAdminTableBody.addEventListener("click", handleOperatorsAdminTableClick);
     }
@@ -480,7 +493,23 @@ const InserimentoPresenzeApp = (() => {
 
       await loadOperatorsFromDatabase();
 
-      renderAll();
+      function renderAll() {
+  renderPermissions();
+  renderSetupForm();
+  renderWizard();
+  renderSetupSummary();
+  renderRowsSetupSummary();
+  renderRowsView();
+  renderOperatorsDatalist();
+  renderOperatorsFilters();
+  renderOperatorsAdmin();
+
+  // ✅ SCROLL AUTOMATICO IN ALTO
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
 
       showBox(dom.globalMessage, "Login effettuato con successo.", "success");
 

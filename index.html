@@ -65,35 +65,118 @@
 </div>
 
 <!-- ✅ STEP 2 MIGLIORATO -->
-  <div id="step2" class="wizard-step hidden" data-step="2">
 
 
-<h2>Parametri giornata</h2>
+<div id="step2" class="wizard-step hidden" data-step="2">
 
-<div class="grid-3">
-  <input id="workDate" type="date">
-  <input id="startTime" type="time">
-  <input id="endTime" type="time">
-</div>
+  <h3>Step 2 - Parametri giornata</h3>
 
-<div class="card-section">
-  <h3>Struttura giornata</h3>
+  <!-- BLOCCO ORARI -->
+  <div class="form-grid">
 
-  <div class="grid-3">
-    <input id="lunchMin" type="number" placeholder="Pausa pranzo">
-    <input id="snackMin" type="number" placeholder="Snack">
-    <input id="stopsMin" type="number" placeholder="Fermi">
+    <div class="field">
+      <label for="workDate">Data giornata</label>
+      <input id="workDate" type="date">
+    </div>
+
+    <div class="field">
+      <label for="startTime">Ora inizio lavoro</label>
+      <input id="startTime" type="time">
+
+      <div class="quick-buttons">
+        <button class="quick-btn" data-target="startTime" data-value="07:30">07:30</button>
+        <button class="quick-btn" data-target="startTime" data-value="08:00">08:00</button>
+        <button class="quick-btn" data-target="startTime" data-value="08:30">08:30</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="endTime">Ora fine lavoro</label>
+      <input id="endTime" type="time">
+
+      <div class="quick-buttons">
+        <button class="quick-btn" data-target="endTime" data-value="15:00">15:00</button>
+        <button class="quick-btn" data-target="endTime" data-value="17:00">17:00</button>
+        <button class="quick-btn" data-target="endTime" data-value="17:30">17:30</button>
+        <button class="quick-btn" data-target="endTime" data-value="18:00">18:00</button>
+      </div>
+    </div>
+
   </div>
 
-  <textarea id="stopsNote" placeholder="Note"></textarea>
+  <!-- STRUTTURA -->
+  <div class="setup-section">
+
+    <h4>Struttura della giornata lavorativa</h4>
+    <p class="section-desc">
+      Inserisci le pause e i fermi che riducono il tempo produttivo.
+    </p>
+
+    <div class="form-grid">
+
+      <div class="field">
+        <label>Pausa pranzo (minuti)</label>
+        <input id="lunchMin" type="number" value="0">
+
+        <div class="quick-buttons">
+          <button class="quick-btn" data-target="lunchMin" data-value="0">0</button>
+          <button class="quick-btn" data-target="lunchMin" data-value="15">15</button>
+          <button class="quick-btn" data-target="lunchMin" data-value="30">30</button>
+          <button class="quick-btn" data-target="lunchMin" data-value="60">60</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Pausa breve / snack (minuti)</label>
+        <input id="snackMin" type="number" value="0">
+
+        <div class="quick-buttons">
+          <button class="quick-btn" data-target="snackMin" data-value="0">0</button>
+          <button class="quick-btn" data-target="snackMin" data-value="10">10</button>
+          <button class="quick-btn" data-target="snackMin" data-value="15">15</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Fermi produzione (minuti)</label>
+        <input id="stopsMin" type="number" value="0">
+
+        <div class="quick-buttons">
+          <button class="quick-btn" data-target="stopsMin" data-value="0">0</button>
+          <button class="quick-btn" data-target="stopsMin" data-value="5">5</button>
+          <button class="quick-btn" data-target="stopsMin" data-value="10">10</button>
+          <button class="quick-btn" data-target="stopsMin" data-value="15">15</button>
+          <button class="quick-btn" data-target="stopsMin" data-value="30">30</button>
+        </div>
+      </div>
+
+      <div class="field field-span-2">
+        <label>Note sui fermi (opzionale)</label>
+        <textarea id="stopsNote" placeholder="Esempio: guasto macchina, attesa materiali..."></textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RISULTATO -->
+  <div class="setup-summary-highlight">
+
+    <div class="summary-block">
+      <span class="label">Ore lavorabili</span>
+      <span class="value" id="summaryWork">--</span>
+    </div>
+
+    <div class="summary-block">
+      <span class="label">Tempo produttivo netto</span>
+      <span class="value" id="summaryNet">--</span>
+    </div>
+
+  </div>
+
 </div>
 
-<div class="summary-highlight">
-  <div>Ore lavorabili <strong id="summaryWork">--</strong></div>
-  <div>Tempo produttivo <strong id="summaryNet">--</strong></div>
-</div>
 
-</div>
+  
 
 <!-- STEP 3 -->
 <div id="step3" class="card wizard-step hidden">

@@ -137,4 +137,49 @@ input, textarea, select {
   .setup-summary-highlight {
     flex-direction: column;
   }
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.topbar-right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* hamburger */
+.hamburger {
+  display: none;
+  font-size: 22px;
+  background: none;
+  border: none;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+
+  .hamburger {
+    display: block;
+  }
+
+  .topbar-right {
+    flex-wrap: wrap;
+  }
+
+  .topbar-menu {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .topbar-menu.open {
+    display: flex;
+  }
+
+
+  
 }

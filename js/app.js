@@ -182,33 +182,62 @@ const InserimentoPresenzeApp = (() => {
   }
 
   async function init() {
-    console.log("INIT");
+  console.log("INIT");
 
-    initDom();
-    bindEvents();
-    restoreState();
+  initDom();
+  bindEvents();
+  restoreState();
 
-    if (!client) {
-      showBox(dom.authErrors, "Client Supabase non disponibile.", "error");
-      return;
-    }
-
-    const sessionUser = await getAuthenticatedUser();
-
-    if (sessionUser) {
-      state.user = sessionUser;
-      await loadCurrentUserProfile();
-      showAuthenticatedUI();
-      await loadOperatorsFromDatabase();
-      renderAll();
-    } else {
-      showLoggedOutUI();
-      renderSetupForm();
-      renderRowsView();
-    }
+  if (!client) {
+    showBox(dom.authErrors, "Client Supabase non disponibile.", "error");
+    return;
   }
 
+  const sessionUser = await getAuthenticatedUser();
 
+  if (sessionUser) {
+    state.user = sessionUser;
+
+    await loadCurrentUserProfile();
+
+    showAuthenticatedUI();
+
+    await loadOperatorsFromDatabase();
+
+    renderAll();
+  } else {
+    showLoggedOutUI();
+    renderSetupForm();
+    renderRowsView();
+  }
+}
+
+
+
+
+
+function handleResetRows() {
+  if (!state.rows resettare tutte le presenze?")) {  if (!state.rows.length) return;
+    return;
+  }
+
+  // ✅ ricrea le righe originali dagli operatori
+  const line = state.setup.lineName;
+
+  const filtered = state.operators.filter((operator) => {
+    return normalizeText(operator.lineaProduzione) === normalizeText(line) &&
+           operator.isActive !== false;
+  });
+
+  state.rows = filtered.map((operator, index) =>
+    buildAttendanceRow(operator, index)
+  );
+
+  saveState();
+  renderRowsView();
+
+  showBox(dom.globalMessage, "Presenze resettate.", "success");
+}
 
 
 
@@ -259,6 +288,11 @@ const InserimentoPresenzeApp = (() => {
     if (dom.wizardNextBtn) {
       dom.wizardNextBtn.addEventListener("click", handleWizardNext);
     }
+  
+if (dom.resetRowsBtn) {
+  dom.resetRowsBtn.addEventListener("click", handleResetRows);
+}
+
 
     if (dom.loadOperatorsBtn) {
       dom.loadOperatorsBtn.addEventListener("click", handleLoadOperatorsForLine);

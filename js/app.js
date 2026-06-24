@@ -208,6 +208,14 @@ const InserimentoPresenzeApp = (() => {
     }
   }
 
+
+
+
+
+
+
+
+  
   function bindEvents() {
     if (dom.loginBtn) {
       dom.loginBtn.addEventListener("click", handleLogin);
@@ -287,55 +295,57 @@ const InserimentoPresenzeApp = (() => {
     if (dom.attendanceTableBody) {
   dom.attendanceTableBody.addEventListener("input", handleRowTableInteraction);
   dom.attendanceTableBody.addEventListener("change", handleRowTableInteraction);
-  dom.attendanceTableBody.addEventListener("click
+  dom.attendanceTableBody.addEventListener("click", handleRowTableInteraction);
+}
 
-    if (dom.closeConfirmModalBtn) {
-      dom.closeConfirmModalBtn.addEventListener("click", closeConfirmModal);
-    }
+if (dom.closeConfirmModalBtn) {
+  dom.closeConfirmModalBtn.addEventListener("click", closeConfirmModal);
+}
 
-    if (dom.cancelConfirmBtn) {
-      dom.cancelConfirmBtn.addEventListener("click", closeConfirmModal);
-    }
+if (dom.cancelConfirmBtn) {
+  dom.cancelConfirmBtn.addEventListener("click", closeConfirmModal);
+}
 
-    if (dom.confirmSaveBtn) {
-      dom.confirmSaveBtn.addEventListener("click", handleConfirmSave);
-    }
+if (dom.confirmSaveBtn) {
+  dom.confirmSaveBtn.addEventListener("click", handleConfirmSave);
+}
 
-    if (dom.confirmModal) {
-      dom.confirmModal.addEventListener("click", (event) => {
-        if (event.target === dom.confirmModal) {
-          closeConfirmModal();
-        }
-      });
+if (dom.confirmModal) {
+  dom.confirmModal.addEventListener("click", (event) => {
+    if (event.target === dom.confirmModal) {
+      closeConfirmModal();
     }
+  });
+}
 
-    if (dom.operatorsSearchInput) {
-      dom.operatorsSearchInput.addEventListener("input", () => {
-        state.operatorsAdmin.searchText = dom.operatorsSearchInput.value || "";
-        renderOperatorsAdmin();
-      });
-    }
+if (dom.operatorsSearchInput) {
+  dom.operatorsSearchInput.addEventListener("input", () => {
+    state.operatorsAdmin.searchText = dom.operatorsSearchInput.value || "";
+    renderOperatorsAdmin();
+  });
+}
 
-    if (dom.operatorsLineFilter) {
-      dom.operatorsLineFilter.addEventListener("change", () => {
-        state.operatorsAdmin.lineFilter = dom.operatorsLineFilter.value || "";
-        renderOperatorsAdmin();
-      });
-    }
+if (dom.operatorsLineFilter) {
+  dom.operatorsLineFilter.addEventListener("change", () => {
+    state.operatorsAdmin.lineFilter = dom.operatorsLineFilter.value || "";
+    renderOperatorsAdmin();
+  });
+}
 
-    if (dom.operatorsStatusFilter) {
-      dom.operatorsStatusFilter.addEventListener("change", () => {
-        state.operatorsAdmin.statusFilter = dom.operatorsStatusFilter.value || "active";
-        renderOperatorsAdmin();
-      });
-    }
+if (dom.operatorsStatusFilter) {
+  dom.operatorsStatusFilter.addEventListener("change", () => {
+    state.operatorsAdmin.statusFilter = dom.operatorsStatusFilter.value || "active";
+    renderOperatorsAdmin();
+  });
+}
 
-    if (dom.refreshOperatorsBtn) {
-      dom.refreshOperatorsBtn.addEventListener("click", async () => {
-        await loadOperatorsFromDatabase();
-        renderAll();
-      });
-    }
+if (dom.refreshOperatorsBtn) {
+  dom.refreshOperatorsBtn.addEventListener("click", async () => {
+    await loadOperatorsFromDatabase();
+    renderAll();
+  });
+}
+
 
     if (dom.newOperatorBtn) {
       dom.newOperatorBtn.addEventListener("click", () => {

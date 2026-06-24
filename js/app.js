@@ -1024,52 +1024,75 @@ const InserimentoPresenzeApp = (() => {
     });
   }
 
-  function handleRowTableInteraction(event) {
-    const target = event.target;
+ function handleRowTableInteraction(event) {
+  const target = event.target;
+  if (!target) return;
 
-    if (!target) return;
+  const rowIndex = Number(target.dataset.rowIndex);
+  const field = target.dataset.field;
+  const action = target.dataset.action;
 
-    const rowIndex = Number(target.dataset.rowIndex);
-    const field = target.dataset.field;
+  // ✅ DUPLICA RIGA
+  if (action === "duplicate") {
+    if (Number.isNaN(rowIndex) || !state.rows[rowIndex]) return;
 
-    if (Number.isNaN(rowIndex) || !field || !state.rows[rowIndex]) return;
+    const rowToClone = state.rows[rowIndex];
 
-    const row = state.rows[rowIndex];
+    const newRow = {
+      ...rowToClone,
+      sort_order: state.rows.length + 1
+    };
 
-    if (field === "postazione") {
-      row.postazione = target.value;
-    }
+    state.rows.splice(rowIndex + 1, 0, newRow);
 
-    if (field === "workHours") {
-      row.work_min = hoursStringToMinutes(target.value);
-    }
-
-    if (field === "evento_min") {
-      row.evento_min = toNonNegativeInt(target.value);
-    }
-
-    if (field === "assemblea_min") {
-      row.assemblea_min = toNonNegativeInt(target.value);
-    }
-
-    if (field === "sciopero_min") {
-      row.sciopero_min = toNonNegativeInt(target.value);
-    }
-
-    row.final_min = calculateFinalMinutes(
-      Number(row.work_min) || 0,
-      Number(state.setup.snackMin) || 0,
-      Number(state.setup.stopsMin) || 0,
-      Number(row.evento_min) || 0,
-      Number(row.assemblea_min) || 0,
-      Number(row.sciopero_min) || 0
-    );
-
-    row.dirty = true;
-
+    reorderRows();
     saveState();
     renderRowsView();
+
+    showBox(dom.globalMessage, "Riga duplicata correttamente.", "success");
+
+    return;
   }
+
+  // ✅ VALIDAZIONE STANDARD
+  if (Number.isNaN(rowIndex) || !field || !state.rows[rowIndex]) return;
+
+  const row = state.rows[rowIndex];
+
+  if (field === "postazione") {
+    row.postazione = target.value;
+  }
+
+  if (field === "workHours") {
+    row.work_min = hoursStringToMinutes(target.value);
+  }
+
+  if (field === "evento_min") {
+    row.evento_min = toNonNegativeInt(target.value);
+  }
+
+  if (field === "assemblea_min") {
+    row.assemblea_min = toNonNegativeInt(target.value);
+  }
+
+  if (field === "sciopero_min") {
+    row.sciopero_min = toNonNegativeInt(target.value);
+  }
+
+  row.final_min = calculateFinalMinutes(
+    Number(row.work_min) || 0,
+    Number(state.setup.snackMin) || 0,
+    Number(state.setup.stopsMin) || 0,
+    Number(row.evento_min) || 0,
+    Number(row.assemblea_min) || 0,
+    Number(row.sciopero_min) || 0
+  );
+
+  row.dirty = true;
+
+  saveState();
+  renderRowsView();
+}
 
   function handleSaveRows() {
     hideBox(dom.rowsErrors);
@@ -1625,6 +1648,17 @@ const InserimentoPresenzeApp = (() => {
                 </button>
               </div>
             </td>
+            
+<td data-label="Azioni">
+  <button 
+    class="btn btn-secondary btn-small"
+    data-row-index="${index}"
+    data-action="duplicate"
+  >
+    Duplica
+  </button>
+</td>
+
           </tr>
         `;
       })

@@ -1484,7 +1484,15 @@ const InserimentoPresenzeApp = (() => {
         <span class="final-sub">${escapeHtml(finalHours)} h</span>
       </div>
     </td>
-
+<td data-label="Azioni">
+  <button 
+    class="btn btn-secondary btn-small"
+    data-row-index="${index}"
+    data-action="duplicate"
+  >
+    Duplica
+  </button>
+</td>
   </tr>
 `;
           
@@ -1649,15 +1657,7 @@ const InserimentoPresenzeApp = (() => {
               </div>
             </td>
             
-<td data-label="Azioni">
-  <button 
-    class="btn btn-secondary btn-small"
-    data-row-index="${index}"
-    data-action="duplicate"
-  >
-    Duplica
-  </button>
-</td>
+
 
           </tr>
         `;

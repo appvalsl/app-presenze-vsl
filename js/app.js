@@ -1051,9 +1051,16 @@ if (dom.refreshOperatorsBtn) {
     const rowToClone = state.rows[rowIndex];
 
     
-const newRow = {
+
+
+    const newRow = {
   ...rowToClone,
-  ore_standard: 0,          // ✅ <-- AGGIUNTO QUI
+  ore_standard: 0,
+  work_min: 0,           // ✅ <-- QUESTO FA LE ORE LAVORATE A 0
+  evento_min: 0,
+  assemblea_min: 0,
+  sciopero_min: 0,
+  final_min: 0,
   sort_order: state.rows.length + 1,
   dirty: true
 };

@@ -215,31 +215,37 @@ const InserimentoPresenzeApp = (() => {
 
 
 
-
 function handleResetRows() {
-  if (!state.rows resettare tutte le presenze?")) {  if (!state.rows.length) return;
+  if (!state.rows.length) {
+    showBox(dom.globalMessage, "Non ci sono presenze da resettare.", "info");
     return;
   }
 
-  // ✅ ricrea le righe originali dagli operatori
-  const line = state.setup.lineName;
+  const conferma = confirm("Sei sicuro di voler resettare tutte le presenze e tornare alle righe iniziali?");
+
+  if (!conferma) {
+    return;
+  }
+
+  const selectedLine = normalizeText(state.setup.lineName);
 
   const filtered = state.operators.filter((operator) => {
-    return normalizeText(operator.lineaProduzione) === normalizeText(line) &&
-           operator.isActive !== false;
+    return (
+      normalizeText(operator.lineaProduzione) === selectedLine &&
+      operator.isActive !== false
+    );
   });
 
   state.rows = filtered.map((operator, index) =>
     buildAttendanceRow(operator, index)
   );
 
+  reorderRows();
   saveState();
-  renderRowsView();
+  renderAll();
 
-  showBox(dom.globalMessage, "Presenze resettate.", "success");
+  showBox(dom.globalMessage, "Presenze resettate correttamente.", "success");
 }
-
-
 
 
 

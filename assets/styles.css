@@ -390,3 +390,66 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: var(--
 }
 
 
+
+
+.extras-toggle {
+  appearance: none;
+  border: 1px dashed var(--border);
+  background: #f8fafc;
+  color: var(--muted);
+  border-radius: 12px;
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.18s ease;
+}
+
+.extras-toggle:hover {
+  background: #eef4ff;
+  border-color: #bcd2f7;
+  color: var(--primary-dark);
+}
+
+.extras-toggle.has-values {
+  background: #eefcf3;
+  border-color: #9ed8b1;
+  color: #0e6a41;
+}
+
+.extras-panel {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fbfdff;
+  display: grid;
+  gap: 10px;
+}
+
+.extras-field {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 12px;
+  align-items: center;
+}
+
+.extras-field label {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+@media (max-width: 768px) {
+  .extras-field {
+    grid-template-columns: 1fr;
+  }
+
+  .extras-field label {
+    margin-bottom: 4px;
+  }
+}

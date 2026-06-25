@@ -1070,7 +1070,8 @@ function handleResetRows() {
   }
 
 
-function handleRowTableInteraction(event) {function handleRow  const target = event.target;
+function handleRowTableInteraction(event) {
+  const target = event.target;
   if (!target) return;
 
   const actionButton = target.closest("button[data-action]");
@@ -1159,12 +1160,6 @@ function handleRowTableInteraction(event) {function handleRow  const target = ev
     renderRowsView();
   }
 }
-
-
-
-
-
-
 
   
   function handleSaveRows() {

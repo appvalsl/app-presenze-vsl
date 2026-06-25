@@ -1069,80 +1069,49 @@ function handleResetRows() {
     });
   }
 
-  function handleRowTableInteraction(event) {
-    const target = event.target;
-    if (!target) return;
 
-    const actionButton = target.closest('button[data-action]');
-    const sourceElement = actionButton || target;
-    const rowIndex = Number(sourceElement.dataset.rowIndex);
-    const field = sourceElement.dataset.field;
-    const action = sourceElement.dataset.action;
+function handleRowTableInteraction(event) {function handleRow  const target = event.target;
+  if (!target) return;
 
-    if (action === "duplicate") {
-      if (Number.isNaN(rowIndex) || !state.rows[rowIndex]) return;
+  const actionButton = target.closest("button[data-action]");
+  const sourceElement = actionButton || target;
 
-      const rowToClone = state.rows[rowIndex];
-      const newRow = {
-        ...rowToClone,
-        ore_standard: 0,
-        work_min: 0,
-        evento_min: 0,
-        assemblea_min: 0,
-        sciopero_min: 0,
-        final_min: 0,
-        extrasOpen: false,
-        sort_order: state.rows.length + 1,
-        dirty: true
-      };
+  const rowIndex = Number(sourceElement.dataset.rowIndex);
+  const field = sourceElement.dataset.field;
+  const action = sourceElement.dataset.action;
 
-      state.rows.splice(rowIndex + 1, 0, newRow);
-      reorderRows();
-      saveState();
-      renderRowsView();
-      showBox(dom.globalMessage, "Riga duplicata correttamente.", "success");
-      return;
-    }
+  if (action === "duplicate") {
+    if (Number.isNaN(rowIndex) || !state.rows[rowIndex]) return;
 
-    if (action === "toggle-extras") {
-      if (Number.isNaN(rowIndex) || !state.rows[rowIndex]) return;
-      state.rows[rowIndex].extrasOpen = !state.rows[rowIndex].extrasOpen;
-      saveState();
-      renderRowsView();
-      return;
-    }
+    const rowToClone = state.rows[rowIndex];
+    const newRow = {
+      ...rowToClone,
+      ore_standard: 0,
+      work_min: 0,
+      evento_min: 0,
+      assemblea_min: 0,
+      sciopero_min: 0,
+      final_min: 0,
+      sort_order: state.rows.length + 1,
+      dirty: true
+    };
 
-    if (Number.isNaN(rowIndex) || !field || !state.rows[rowIndex]) return;
+    state.rows.splice(rowIndex + 1, 0, newRow);
 
-    const row = state.rows[rowIndex];
+    reorderRows();
+    saveState();
+    renderRowsView();
 
-    if (field === "postazione") {
-      row.postazione = target.value;
-      row.final_min = calculateFinalMinutes(
-        Number(row.work_min) || 0,
-        Number(state.setup.snackMin) || 0,
-        Number(state.setup.stopsMin) || 0,
-        Number(row.evento_min) || 0,
-        Number(row.assemblea_min) || 0,
-        Number(row.sciopero_min) || 0
-      );
-      row.dirty = true;
-      saveState();
-      return;
-    }
+    showBox(dom.globalMessage, "Riga duplicata correttamente.", "success");
+    return;
+  }
 
-    if (field === "workHours") {
-      row.work_min = hoursStringToMinutes(target.value);
-    }
-    if (field === "evento_min") {
-      row.evento_min = toNonNegativeInt(target.value);
-    }
-    if (field === "assemblea_min") {
-      row.assemblea_min = toNonNegativeInt(target.value);
-    }
-    if (field === "sciopero_min") {
-      row.sciopero_min = toNonNegativeInt(target.value);
-    }
+  if (Number.isNaN(rowIndex) || !field || !state.rows[rowIndex]) return;
+
+  const row = state.rows[rowIndex];
+
+  if (field === "postazione") {
+    row.postazione = target.value;
 
     row.final_min = calculateFinalMinutes(
       Number(row.work_min) || 0,
@@ -1155,11 +1124,49 @@ function handleResetRows() {
 
     row.dirty = true;
     saveState();
-
-    if (event.type === "input" || event.type === "change") {
-      renderRowsView();
-    }
+    return;
   }
+
+  if (field === "workHours") {
+    row.work_min = hoursStringToMinutes(target.value);
+  }
+
+  if (field === "evento_min") {
+    row.evento_min = toNonNegativeInt(target.value);
+  }
+
+  if (field === "assemblea_min") {
+    row.assemblea_min = toNonNegativeInt(target.value);
+  }
+
+  if (field === "sciopero_min") {
+    row.sciopero_min = toNonNegativeInt(target.value);
+  }
+
+  row.final_min = calculateFinalMinutes(
+    Number(row.work_min) || 0,
+    Number(state.setup.snackMin) || 0,
+    Number(state.setup.stopsMin) || 0,
+    Number(row.evento_min) || 0,
+    Number(row.assemblea_min) || 0,
+    Number(row.sciopero_min) || 0
+  );
+
+  row.dirty = true;
+  saveState();
+
+  if (event.type === "change") {
+    renderRowsView();
+  }
+}
+
+
+
+
+
+
+
+  
   function handleSaveRows() {
     hideBox(dom.rowsErrors);
     hideBox(dom.globalMessage);

@@ -297,11 +297,10 @@ function handleResetRows() {
     if (dom.wizardNextBtn) {
       dom.wizardNextBtn.addEventListener("click", handleWizardNext);
     }
-  
-if (dom.resetRowsBtn) {
-  dom.resetRowsBtn.addEventListener("click", handleResetRows);
-}
 
+    if (dom.resetRowsBtn) {
+      dom.resetRowsBtn.addEventListener("click", handleResetRows);
+    }
 
     if (dom.loadOperatorsBtn) {
       dom.loadOperatorsBtn.addEventListener("click", handleLoadOperatorsForLine);
@@ -336,59 +335,63 @@ if (dom.resetRowsBtn) {
     }
 
     if (dom.attendanceTableBody) {
-  dom.attendanceTableBody.addEventListener("input", handleRowTableInteraction);
-  dom.attendanceTableBody.addEventListener("change", handleRowTableInteraction);
-  dom.attendanceTableBody.addEventListener("click", handleRowTableInteraction);
-}
-
-if (dom.closeConfirmModalBtn) {
-  dom.closeConfirmModalBtn.addEventListener("click", closeConfirmModal);
-}
-
-if (dom.cancelConfirmBtn) {
-  dom.cancelConfirmBtn.addEventListener("click", closeConfirmModal);
-}
-
-if (dom.confirmSaveBtn) {
-  dom.confirmSaveBtn.addEventListener("click", handleConfirmSave);
-}
-
-if (dom.confirmModal) {
-  dom.confirmModal.addEventListener("click", (event) => {
-    if (event.target === dom.confirmModal) {
-      closeConfirmModal();
+      dom.attendanceTableBody.addEventListener("input", handleRowTableInteraction);
+      dom.attendanceTableBody.addEventListener("change", handleRowTableInteraction);
+      dom.attendanceTableBody.addEventListener("click", (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (button) {
+          handleRowTableInteraction(event);
+        }
+      });
     }
-  });
-}
 
-if (dom.operatorsSearchInput) {
-  dom.operatorsSearchInput.addEventListener("input", () => {
-    state.operatorsAdmin.searchText = dom.operatorsSearchInput.value || "";
-    renderOperatorsAdmin();
-  });
-}
+    if (dom.closeConfirmModalBtn) {
+      dom.closeConfirmModalBtn.addEventListener("click", closeConfirmModal);
+    }
 
-if (dom.operatorsLineFilter) {
-  dom.operatorsLineFilter.addEventListener("change", () => {
-    state.operatorsAdmin.lineFilter = dom.operatorsLineFilter.value || "";
-    renderOperatorsAdmin();
-  });
-}
+    if (dom.cancelConfirmBtn) {
+      dom.cancelConfirmBtn.addEventListener("click", closeConfirmModal);
+    }
 
-if (dom.operatorsStatusFilter) {
-  dom.operatorsStatusFilter.addEventListener("change", () => {
-    state.operatorsAdmin.statusFilter = dom.operatorsStatusFilter.value || "active";
-    renderOperatorsAdmin();
-  });
-}
+    if (dom.confirmSaveBtn) {
+      dom.confirmSaveBtn.addEventListener("click", handleConfirmSave);
+    }
 
-if (dom.refreshOperatorsBtn) {
-  dom.refreshOperatorsBtn.addEventListener("click", async () => {
-    await loadOperatorsFromDatabase();
-    renderAll();
-  });
-}
+    if (dom.confirmModal) {
+      dom.confirmModal.addEventListener("click", (event) => {
+        if (event.target === dom.confirmModal) {
+          closeConfirmModal();
+        }
+      });
+    }
 
+    if (dom.operatorsSearchInput) {
+      dom.operatorsSearchInput.addEventListener("input", () => {
+        state.operatorsAdmin.searchText = dom.operatorsSearchInput.value || "";
+        renderOperatorsAdmin();
+      });
+    }
+
+    if (dom.operatorsLineFilter) {
+      dom.operatorsLineFilter.addEventListener("change", () => {
+        state.operatorsAdmin.lineFilter = dom.operatorsLineFilter.value || "";
+        renderOperatorsAdmin();
+      });
+    }
+
+    if (dom.operatorsStatusFilter) {
+      dom.operatorsStatusFilter.addEventListener("change", () => {
+        state.operatorsAdmin.statusFilter = dom.operatorsStatusFilter.value || "active";
+        renderOperatorsAdmin();
+      });
+    }
+
+    if (dom.refreshOperatorsBtn) {
+      dom.refreshOperatorsBtn.addEventListener("click", async () => {
+        await loadOperatorsFromDatabase();
+        renderAll();
+      });
+    }
 
     if (dom.newOperatorBtn) {
       dom.newOperatorBtn.addEventListener("click", () => {
@@ -396,7 +399,6 @@ if (dom.refreshOperatorsBtn) {
           showBox(dom.operatorsAdminMessage, "Non sei autorizzato a gestire gli operatori.", "error");
           return;
         }
-
         openOperatorModalForCreate();
       });
     }
@@ -438,20 +440,16 @@ if (dom.refreshOperatorsBtn) {
 
     setupInputs.forEach((element) => {
       if (!element) return;
-
       const eventType = element.tagName === "SELECT" ? "change" : "input";
-
       element.addEventListener(eventType, () => {
         readSetupFromForm();
         syncQuickButtons();
         renderSetupSummary();
         renderRowsSetupSummary();
-
         if (state.rows.length) {
           recalcAllRows();
           renderRowsView();
         }
-
         saveState();
       });
     });
@@ -461,16 +459,13 @@ if (dom.refreshOperatorsBtn) {
         const targetId = button.dataset.target;
         const value = button.dataset.value;
         const target = document.getElementById(targetId);
-
         if (!target) return;
-
         target.value = value;
         target.dispatchEvent(new Event("input", { bubbles: true }));
         target.dispatchEvent(new Event("change", { bubbles: true }));
       });
     });
   }
-
   async function getAuthenticatedUser() {
     try {
       const response = await client.auth.getSession();
@@ -962,13 +957,10 @@ if (dom.refreshOperatorsBtn) {
   function buildAttendanceRow(operator, index) {
     const lineName = state.setup.lineName;
     const stationOptions = getStationOptions(lineName, operator.postazione);
-
     const initialStation = stationOptions.includes(operator.postazione)
       ? operator.postazione
       : stationOptions[0] || "";
-
     const workMin = Number(state.setup.baseWorkMinutes) || 0;
-
     const finalMin = calculateFinalMinutes(
       workMin,
       Number(state.setup.snackMin) || 0,
@@ -977,7 +969,6 @@ if (dom.refreshOperatorsBtn) {
       0,
       0
     );
-
     return {
       operator_id: operator.id,
       sort_order: index + 1,
@@ -996,6 +987,7 @@ if (dom.refreshOperatorsBtn) {
       assemblea_min: 0,
       sciopero_min: 0,
       final_min: finalMin,
+      extrasOpen: false,
       dirty: false,
       removed: false
     };
@@ -1077,50 +1069,80 @@ if (dom.refreshOperatorsBtn) {
     });
   }
 
-function handleRowTableInteraction(event) {
-  const target = event.target;
-  if (!target) return;
+  function handleRowTableInteraction(event) {
+    const target = event.target;
+    if (!target) return;
 
-  const actionButton = target.closest('button[data-action]');
-  const sourceElement = actionButton || target;
-  const rowIndex = Number(sourceElement.dataset.rowIndex);
-  const field = sourceElement.dataset.field;
-  const action = sourceElement.dataset.action;
+    const actionButton = target.closest('button[data-action]');
+    const sourceElement = actionButton || target;
+    const rowIndex = Number(sourceElement.dataset.rowIndex);
+    const field = sourceElement.dataset.field;
+    const action = sourceElement.dataset.action;
 
-  // Gestione duplicazione riga
-  if (action === "duplicate") {
-    if (Number.isNaN(rowIndex) || !state.rows[rowIndex]) return;
+    if (action === "duplicate") {
+      if (Number.isNaN(rowIndex) || !state.rows[rowIndex]) return;
 
-    const rowToClone = state.rows[rowIndex];
-    const newRow = {
-      ...rowToClone,
-      ore_standard: 0,
-      work_min: 0,
-      evento_min: 0,
-      assemblea_min: 0,
-      sciopero_min: 0,
-      final_min: 0,
-      sort_order: state.rows.length + 1,
-      dirty: true
-    };
+      const rowToClone = state.rows[rowIndex];
+      const newRow = {
+        ...rowToClone,
+        ore_standard: 0,
+        work_min: 0,
+        evento_min: 0,
+        assemblea_min: 0,
+        sciopero_min: 0,
+        final_min: 0,
+        extrasOpen: false,
+        sort_order: state.rows.length + 1,
+        dirty: true
+      };
 
-    state.rows.splice(rowIndex + 1, 0, newRow);
-    reorderRows();
-    saveState();
-    renderRowsView();
-    showBox(dom.globalMessage, "Riga duplicata correttamente.", "success");
-    return;
-  }
+      state.rows.splice(rowIndex + 1, 0, newRow);
+      reorderRows();
+      saveState();
+      renderRowsView();
+      showBox(dom.globalMessage, "Riga duplicata correttamente.", "success");
+      return;
+    }
 
-  if (Number.isNaN(rowIndex) || !field || !state.rows[rowIndex]) return;
+    if (action === "toggle-extras") {
+      if (Number.isNaN(rowIndex) || !state.rows[rowIndex]) return;
+      state.rows[rowIndex].extrasOpen = !state.rows[rowIndex].extrasOpen;
+      saveState();
+      renderRowsView();
+      return;
+    }
 
-  const row = state.rows[rowIndex];
+    if (Number.isNaN(rowIndex) || !field || !state.rows[rowIndex]) return;
 
-  // Gestione select postazione:
-  // aggiorna stato e salva, ma NON rifare renderRowsView()
-  // altrimenti il select si richiude subito
-  if (field === "postazione") {
-    row.postazione = target.value;
+    const row = state.rows[rowIndex];
+
+    if (field === "postazione") {
+      row.postazione = target.value;
+      row.final_min = calculateFinalMinutes(
+        Number(row.work_min) || 0,
+        Number(state.setup.snackMin) || 0,
+        Number(state.setup.stopsMin) || 0,
+        Number(row.evento_min) || 0,
+        Number(row.assemblea_min) || 0,
+        Number(row.sciopero_min) || 0
+      );
+      row.dirty = true;
+      saveState();
+      return;
+    }
+
+    if (field === "workHours") {
+      row.work_min = hoursStringToMinutes(target.value);
+    }
+    if (field === "evento_min") {
+      row.evento_min = toNonNegativeInt(target.value);
+    }
+    if (field === "assemblea_min") {
+      row.assemblea_min = toNonNegativeInt(target.value);
+    }
+    if (field === "sciopero_min") {
+      row.sciopero_min = toNonNegativeInt(target.value);
+    }
 
     row.final_min = calculateFinalMinutes(
       Number(row.work_min) || 0,
@@ -1133,46 +1155,11 @@ function handleRowTableInteraction(event) {
 
     row.dirty = true;
     saveState();
-    return;
+
+    if (event.type === "input" || event.type === "change") {
+      renderRowsView();
+    }
   }
-
-  // Gestione campi numerici
-  if (field === "workHours") {
-    row.work_min = hoursStringToMinutes(target.value);
-  }
-
-  if (field === "evento_min") {
-    row.evento_min = toNonNegativeInt(target.value);
-  }
-
-  if (field === "assemblea_min") {
-    row.assemblea_min = toNonNegativeInt(target.value);
-  }
-
-  if (field === "sciopero_min") {
-    row.sciopero_min = toNonNegativeInt(target.value);
-  }
-
-  row.final_min = calculateFinalMinutes(
-    Number(row.work_min) || 0,
-    Number(state.setup.snackMin) || 0,
-    Number(state.setup.stopsMin) || 0,
-    Number(row.evento_min) || 0,
-    Number(row.assemblea_min) || 0,
-    Number(row.sciopero_min) || 0
-  );
-
-  row.dirty = true;
-  saveState();
-
-  // Re-render solo per input numerici e azioni che lo richiedono
-  if (event.type === "change" || event.type === "input") {
-    renderRowsView();
-  }
-}
-
-
-  
   function handleSaveRows() {
     hideBox(dom.rowsErrors);
     hideBox(dom.globalMessage);
@@ -1446,7 +1433,7 @@ function handleRowTableInteraction(event) {
     if (!state.rows.length) {
       dom.attendanceTableBody.innerHTML = `
         <tr>
-          <td colspan="8">
+          <td colspan="7">
             <div class="muted">
               Nessuna riga caricata. Completa il setup e carica gli operatori della linea.
             </div>
@@ -1460,11 +1447,15 @@ function handleRowTableInteraction(event) {
       .map((row, index) => {
         const workHours = minutesToHoursString(row.work_min);
         const finalHours = minutesToHoursString(row.final_min);
+        const extrasOpen = Boolean(row.extrasOpen);
+        const extrasActive =
+          (Number(row.evento_min) || 0) > 0 ||
+          (Number(row.assemblea_min) || 0) > 0 ||
+          (Number(row.sciopero_min) || 0) > 0;
 
         const options = getStationOptions(state.setup.lineName, row.postazione)
           .map((station) => {
             const selected = station === row.postazione ? "selected" : "";
-
             return `
               <option value="${escapeAttribute(station)}" ${selected}>
                 ${escapeHtml(station)}
@@ -1474,111 +1465,128 @@ function handleRowTableInteraction(event) {
           .join("");
 
         const operatorLabel =
-          [row.cognome, row.nome].filter(Boolean).join(" ").trim() ||
-          "Operatore";
+          [row.cognome, row.nome].filter(Boolean).join(" ").trim() || "Operatore";
 
-        const operatorMeta = [
-
-        ]
-          .filter(Boolean)
-          .join(" • ");
+        const extrasToggleClass = extrasActive
+          ? "extras-toggle has-values"
+          : "extras-toggle";
 
         return `
-  <tr>
+          <tr>
+            <td data-label="Operatore" class="cell-operator">
+              <div class="operator-name">${escapeHtml(operatorLabel)}</div>
+              <div class="operator-meta">-</div>
+            </td>
 
-    <td data-label="Operatore" class="cell-operator">
-      <div class="operator-name">${escapeHtml(operatorLabel)}</div>
-      <div class="operator-meta">${escapeHtml(operatorMeta || "-")}</div>
-    </td>
+            <td data-label="Ore std">
+              ${escapeHtml(String(Number(row.ore_standard) || 0))}
+            </td>
 
-    <td data-label="Ore std">
-      ${escapeHtml(String(Number(row.ore_standard) || 0))}
-    </td>
+            <td data-label="Ore lavorate (h)">
+              <input
+                class="table-input"
+                type="number"
+                min="0"
+                step="0.25"
+                inputmode="decimal"
+                value="${escapeAttribute(workHours)}"
+                data-row-index="${index}"
+                data-field="workHours"
+              >
+            </td>
 
-    <td data-label="Ore lavorate (h)">
-      <input
-        class="table-input"
-        type="number"
-        min="0"
-        step="0.25"
-        inputmode="decimal"
-        value="${escapeAttribute(workHours)}"
-        data-row-index="${index}"
-        data-field="workHours"
-      >
-    </td>
+            <td data-label="Extra">
+              <button
+                type="button"
+                class="${extrasToggleClass}"
+                data-row-index="${index}"
+                data-action="toggle-extras"
+              >
+                ${extrasOpen ? "−" : "+"} Eventi / anomalie
+              </button>
 
-    <td data-label="Evento min">
-      <input
-        class="table-input"
-        type="number"
-        min="0"
-        step="1"
-        inputmode="numeric"
-        value="${escapeAttribute(String(row.evento_min))}"
-        data-row-index="${index}"
-        data-field="evento_min"
-      >
-    </td>
+              ${
+                extrasOpen
+                  ? `
+                <div class="extras-panel">
+                  <div class="extras-field">
+                    <label>Evento min</label>
+                    <input
+                      class="table-input"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputmode="numeric"
+                      value="${escapeAttribute(String(row.evento_min))}"
+                      data-row-index="${index}"
+                      data-field="evento_min"
+                    >
+                  </div>
 
-    <td data-label="Assemblea min">
-      <input
-        class="table-input"
-        type="number"
-        min="0"
-        step="1"
-        inputmode="numeric"
-        value="${escapeAttribute(String(row.assemblea_min))}"
-        data-row-index="${index}"
-        data-field="assemblea_min"
-      >
-    </td>
+                  <div class="extras-field">
+                    <label>Assemblea min</label>
+                    <input
+                      class="table-input"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputmode="numeric"
+                      value="${escapeAttribute(String(row.assemblea_min))}"
+                      data-row-index="${index}"
+                      data-field="assemblea_min"
+                    >
+                  </div>
 
-    <td data-label="Sciopero min">
-      <input
-        class="table-input"
-        type="number"
-        min="0"
-        step="1"
-        inputmode="numeric"
-        value="${escapeAttribute(String(row.sciopero_min))}"
-        data-row-index="${index}"
-        data-field="sciopero_min"
-      >
-    </td>
+                  <div class="extras-field">
+                    <label>Sciopero min</label>
+                    <input
+                      class="table-input"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputmode="numeric"
+                      value="${escapeAttribute(String(row.sciopero_min))}"
+                      data-row-index="${index}"
+                      data-field="sciopero_min"
+                    >
+                  </div>
+                </div>
+              `
+                  : ""
+              }
+            </td>
 
-    <td data-label="Postazione">
-      <select
-        class="table-select"
-        data-row-index="${index}"
-        data-field="postazione"
-      >
-        ${options}
-      </select>
-    </td>
+            <td data-label="Postazione">
+              <select
+                class="table-select"
+                data-row-index="${index}"
+                data-field="postazione"
+              >
+                ${options}
+              </select>
+            </td>
 
-    <td data-label="Finali" class="final-cell">
-      <div class="final-box">
-        <span class="final-main">${escapeHtml(String(row.final_min))} min</span>
-        <span class="final-sub">${escapeHtml(finalHours)} h</span>
-      </div>
-    </td>
-<td data-label="Azioni">
-  <button 
-    class="btn btn-secondary btn-small"
-    data-row-index="${index}"
-    data-action="duplicate"
-  >
-    Duplica
-  </button>
-</td>
-  </tr>
-`;
-          
+            <td data-label="Finali" class="final-cell">
+              <div class="final-box">
+                <span class="final-main">${escapeHtml(String(row.final_min))} min</span>
+                <span class="final-sub">${escapeHtml(finalHours)} h</span>
+              </div>
+            </td>
+
+            <td data-label="Azioni">
+              <button
+                class="btn btn-secondary btn-small"
+                data-row-index="${index}"
+                data-action="duplicate"
+              >
+                Duplica
+              </button>
+            </td>
+          </tr>
+        `;
       })
       .join("");
   }
-
   function renderOperatorsDatalist() {
     if (!dom.operatorsDatalist) return;
 
@@ -2399,6 +2407,7 @@ function handleRowTableInteraction(event) {
             assemblea_min: Number(row.assemblea_min) || 0,
             sciopero_min: Number(row.sciopero_min) || 0,
             final_min: Number(row.final_min) || 0,
+            extrasOpen: Boolean(row.extrasOpen),
             dirty: Boolean(row.dirty),
             removed: Boolean(row.removed)
           };

@@ -11,6 +11,7 @@
   <script src="./js/config.js"></script>
   <script src="./js/supabase-client.js"></script>
   <script src="./js/app.js" defer></script>
+  <script src="./js/admin-extension.js" defer></script>
 </head>
 
 <body>
@@ -28,7 +29,8 @@
         <button id="menuToggle" class="hamburger" type="button" aria-label="Apri menu">☰</button>
         <div id="topbarMenu" class="topbar-menu">
           <button id="openAttendanceBtn" class="btn btn-secondary hidden" type="button">Presenze</button>
-          <button id="openOperatorsBtn" class="btn btn-secondary hidden" type="button">Gestione operatori</button>
+          <button id="openOperatorsBtn" class="btn btn-secondary hidden" type="button">Gestione applicazione</button>
+          <button id="openAttendanceAdminBtn" class="btn btn-secondary hidden" type="button">Riepilogo presenze</button>
           <span id="userBadge" class="user-badge hidden"></span>
           <button id="logoutBtn" class="btn btn-secondary hidden" type="button">Logout</button>
         </div>
@@ -272,7 +274,6 @@
                   <thead>
                     <tr>
                       <th>Operatore</th>
-                      
                       <th>Ore lavorate (h)</th>
                       <th>Extra</th>
                       <th>Postazione</th>
@@ -287,12 +288,38 @@
           </section>
         </section>
 
+        
+        <section id="attendanceAdminView" class="view hidden">
+          <div class="card">
+            <div class="rows-top">
+              <div>
+                <h2>Riepilogo presenze</h2>
+                <p>Consulta e modifica le presenze salvate da tutti gli utenti.</p>
+              </div>
+              <div class="rows-top-right">
+                <button id="refreshAttendanceAdminBtn" class="btn btn-secondary" type="button">Aggiorna</button>
+              </div>
+            </div>
+            <div id="attendanceAdminMessage" class="message hidden" role="alert" aria-live="polite"></div>
+            <div class="card inline-card">
+              <div class="form-grid form-grid-3">
+                <div class="field"><label for="attendanceAdminDateFilter">Data</label><input id="attendanceAdminDateFilter" type="date"></div>
+                <div class="field"><label for="attendanceAdminLineFilter">Linea</label><select id="attendanceAdminLineFilter"><option value="">Tutte le linee</option></select></div>
+                <div class="field"><label for="attendanceAdminSearchInput">Cerca nel dettaglio</label><input id="attendanceAdminSearchInput" type="text" placeholder="Operatore, postazione, lavorazione"></div>
+              </div>
+            </div>
+            <h3 class="admin-subtitle">Giornate salvate</h3>
+            <div class="table-wrap"><table class="attendance-table"><thead><tr><th>Data</th><th>Linea</th><th>Inizio</th><th>Fine</th><th>Azioni</th></tr></thead><tbody id="attendanceAdminSessionsBody"></tbody></table></div>
+            <h3 class="admin-subtitle">Dettaglio presenze</h3>
+            <div class="table-wrap"><table class="attendance-table"><thead><tr><th>Operatore</th><th>Linea</th><th>Postazione</th><th>Lavorazioni</th><th>Ore</th><th>Finali</th><th>Extra</th><th>Azioni</th></tr></thead><tbody id="attendanceAdminRowsBody"></tbody></table></div>
+          </div>
+        </section>
         <section id="operatorsAdminView" class="view hidden">
           <div class="card">
             <div class="rows-top">
               <div>
-                <h2>Gestione operatori</h2>
-                <p>Sezione riservata agli utenti autorizzati.</p>
+                <h2>Gestione applicazione</h2>
+                <p>Sezione riservata agli admin per gestire operatori e tabelle applicative.</p>
               </div>
               <div class="rows-top-right">
                 <button id="newOperatorBtn" class="btn btn-primary hidden" type="button">Nuovo operatore</button>
@@ -341,7 +368,7 @@
                     <th>Linea</th>
                     <th>Macro linea</th>
                     <th>Postazione</th>
-                    
+                    <th>Ore std</th>
                     <th>Attivo</th>
                     <th>Azioni</th>
                   </tr>

@@ -50,3 +50,5 @@
 @media (min-width: 1200px){
   .page{padding-left:24px!important;padding-right:24px!important;}
 }
+
+.full-admin-panel{border:1px solid #bfd7f3;background:#f8fbff}.users-admin-table td{vertical-align:middle}.full-admin-panel .card-header h3{margin:0 0 4px;color:#173b70}

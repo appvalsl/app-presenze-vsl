@@ -10,3 +10,43 @@
 .works-panel{max-height:none!important;overflow:visible!important;}
 .attendance-table td[data-label="Lavorazioni"]{min-width:360px;}
 .work-check{align-items:flex-start;}
+
+
+/* V4 - Layout full screen / non boxed */
+.page{
+  max-width:none!important;
+  width:100%!important;
+  margin:0!important;
+  padding:16px 18px!important;
+}
+.card{
+  width:100%!important;
+  max-width:none!important;
+  border-radius:14px!important;
+}
+.app-section,
+.view,
+#attendanceView,
+#rowsView,
+#setupView,
+#operatorsAdminView,
+#attendanceAdminView{
+  width:100%!important;
+  max-width:none!important;
+}
+.table-wrap{
+  width:100%!important;
+}
+.attendance-table{
+  width:100%!important;
+}
+#rowsView > .card,
+#setupView > .card,
+#operatorsAdminView > .card,
+#attendanceAdminView > .card{
+  margin-left:0!important;
+  margin-right:0!important;
+}
+@media (min-width: 1200px){
+  .page{padding-left:24px!important;padding-right:24px!important;}
+}

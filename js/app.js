@@ -59,6 +59,44 @@ const InserimentoPresenzeApp = (() => {
     "CONTROLLO TOMAIA": ["Assente"]
   };
 
+
+  const WORKS_BY_LINE_STATION = {
+    "CALZOLERIA 1": {
+      "Premonta": ["Preparazione postazione", "Premonta", "Controllo premonta"],
+      "Montaggio manuale": ["Preparazione fondo", "Montaggio manuale", "Controllo montaggio"],
+      "Carico e grattatura strutture": ["Carico strutture", "Grattatura strutture", "Controllo strutture"],
+      "Ribattitura e rimozione chiodi": ["Ribattitura", "Rimozione chiodi", "Controllo ribattitura"],
+      "Sgrossatura e ribattitura": ["Sgrossatura", "Ribattitura", "Controllo sgrossatura"],
+      "Segno a dima e boetta": ["Segno a dima", "Boetta", "Controllo segni"],
+      "Cardatura fine": ["Cardatura fine", "Pulizia cardatura", "Controllo cardatura"],
+      "Incollaggio suola": ["Preparazione suola", "Incollaggio suola", "Controllo incollaggio"],
+      "Incollaggio tomaia": ["Preparazione tomaia", "Incollaggio tomaia", "Controllo incollaggio"],
+      "Suolatura": ["Suolatura", "Pressatura/adesione", "Controllo suolatura"],
+      "Pulizia": ["Pulizia", "Ritocco", "Controllo pulizia"],
+      "Inchiodatura": ["Inchiodatura", "Controllo inchiodatura"]
+    },
+    "CALZOLERIA 2": {
+      "Premonta": ["Preparazione postazione", "Premonta", "Controllo premonta"],
+      "Montaggio manuale": ["Preparazione fondo", "Montaggio manuale", "Controllo montaggio"],
+      "Calzera": ["Calzera", "Regolazione", "Controllo calzera"],
+      "Carico e grattatura strutture": ["Carico strutture", "Grattatura strutture", "Controllo strutture"],
+      "Ribattitura e rimozione chiodi": ["Ribattitura", "Rimozione chiodi", "Controllo ribattitura"],
+      "Sgrossatura": ["Sgrossatura", "Controllo sgrossatura"],
+      "Segno a dima e boetta": ["Segno a dima", "Boetta", "Controllo segni"],
+      "Cardatura fine": ["Cardatura fine", "Pulizia cardatura", "Controllo cardatura"],
+      "Incollaggio suola": ["Preparazione suola", "Incollaggio suola", "Controllo incollaggio"],
+      "Incollaggio tomaia": ["Preparazione tomaia", "Incollaggio tomaia", "Controllo incollaggio"],
+      "Suolatura": ["Suolatura", "Pressatura/adesione", "Controllo suolatura"],
+      "Pulizia": ["Pulizia", "Ritocco", "Controllo pulizia"],
+      "Inchiodatura": ["Inchiodatura", "Controllo inchiodatura"]
+    },
+    "RIFINITURA 1": {},
+    "RIFINITURA 2": {},
+    "MAGAZZINO SEMILAVORATI": {},
+    "MAGAZZINO SPEDIZIONI": {},
+    "CONTROLLO TOMAIA": {}
+  };
+
   const state = {
     currentStep: 1,
     activeMainView: "attendance",
@@ -86,6 +124,15 @@ const InserimentoPresenzeApp = (() => {
       searchText: "",
       lineFilter: "",
       statusFilter: "active"
+    },
+    attendanceAdmin: {
+      sessions: [],
+      rows: [],
+      selectedSessionId: null,
+      dateFilter: "",
+      lineFilter: "",
+      searchText: "",
+      editRow: null
     }
   };
 
@@ -100,6 +147,7 @@ const InserimentoPresenzeApp = (() => {
     dom.logoutBtn = document.getElementById("logoutBtn");
     dom.openAttendanceBtn = document.getElementById("openAttendanceBtn");
     dom.openOperatorsBtn = document.getElementById("openOperatorsBtn");
+    dom.openAttendanceAdminBtn = document.getElementById("openAttendanceAdminBtn");
 
     dom.emailInput = document.getElementById("emailInput");
     dom.passwordInput = document.getElementById("passwordInput");
@@ -108,6 +156,7 @@ const InserimentoPresenzeApp = (() => {
 
     dom.attendanceView = document.getElementById("attendanceView");
     dom.operatorsAdminView = document.getElementById("operatorsAdminView");
+    dom.attendanceAdminView = document.getElementById("attendanceAdminView");
 
     dom.setupView = document.getElementById("setupView");
     dom.rowsView = document.getElementById("rowsView");
@@ -153,6 +202,31 @@ dom.attendanceTableBody = document.getElementById("attendanceTableBody");
     dom.cancelConfirmBtn = document.getElementById("cancelConfirmBtn");
     dom.confirmSaveBtn = document.getElementById("confirmSaveBtn");
 
+    dom.attendanceAdminMessage = document.getElementById("attendanceAdminMessage");
+    dom.attendanceAdminDateFilter = document.getElementById("attendanceAdminDateFilter");
+    dom.attendanceAdminLineFilter = document.getElementById("attendanceAdminLineFilter");
+    dom.attendanceAdminSearchInput = document.getElementById("attendanceAdminSearchInput");
+    dom.refreshAttendanceAdminBtn = document.getElementById("refreshAttendanceAdminBtn");
+    dom.attendanceAdminStats = document.getElementById("attendanceAdminStats");
+    dom.attendanceAdminSessionsBody = document.getElementById("attendanceAdminSessionsBody");
+    dom.attendanceAdminRowsBody = document.getElementById("attendanceAdminRowsBody");
+    dom.attendanceAdminDetailTitle = document.getElementById("attendanceAdminDetailTitle");
+    dom.attendanceRowModal = document.getElementById("attendanceRowModal");
+    dom.attendanceRowModalTitle = document.getElementById("attendanceRowModalTitle");
+    dom.attendanceRowModalMessage = document.getElementById("attendanceRowModalMessage");
+    dom.attendanceRowFormId = document.getElementById("attendanceRowFormId");
+    dom.attendanceRowSessionId = document.getElementById("attendanceRowSessionId");
+    dom.attendanceRowOperatorInput = document.getElementById("attendanceRowOperatorInput");
+    dom.attendanceRowLineInput = document.getElementById("attendanceRowLineInput");
+    dom.attendanceRowStationInput = document.getElementById("attendanceRowStationInput");
+    dom.attendanceRowWorkHoursInput = document.getElementById("attendanceRowWorkHoursInput");
+    dom.attendanceRowEventoInput = document.getElementById("attendanceRowEventoInput");
+    dom.attendanceRowAssembleaInput = document.getElementById("attendanceRowAssembleaInput");
+    dom.attendanceRowScioperoInput = document.getElementById("attendanceRowScioperoInput");
+    dom.attendanceRowWorksBox = document.getElementById("attendanceRowWorksBox");
+    dom.closeAttendanceRowModalBtn = document.getElementById("closeAttendanceRowModalBtn");
+    dom.cancelAttendanceRowModalBtn = document.getElementById("cancelAttendanceRowModalBtn");
+    dom.saveAttendanceRowBtn = document.getElementById("saveAttendanceRowBtn");
     dom.operatorsAdminMessage = document.getElementById("operatorsAdminMessage");
     dom.operatorsSearchInput = document.getElementById("operatorsSearchInput");
     dom.operatorsLineFilter = document.getElementById("operatorsLineFilter");
@@ -369,6 +443,7 @@ function handleResetRows() {
       dom.operatorsSearchInput.addEventListener("input", () => {
         state.operatorsAdmin.searchText = dom.operatorsSearchInput.value || "";
         renderOperatorsAdmin();
+    renderAttendanceAdmin();
       });
     }
 
@@ -376,6 +451,7 @@ function handleResetRows() {
       dom.operatorsLineFilter.addEventListener("change", () => {
         state.operatorsAdmin.lineFilter = dom.operatorsLineFilter.value || "";
         renderOperatorsAdmin();
+    renderAttendanceAdmin();
       });
     }
 
@@ -383,6 +459,7 @@ function handleResetRows() {
       dom.operatorsStatusFilter.addEventListener("change", () => {
         state.operatorsAdmin.statusFilter = dom.operatorsStatusFilter.value || "active";
         renderOperatorsAdmin();
+    renderAttendanceAdmin();
       });
     }
 
@@ -423,7 +500,55 @@ function handleResetRows() {
       dom.operatorModal.addEventListener("click", (event) => {
         if (event.target === dom.operatorModal) {
           closeOperatorModal();
+    closeAttendanceRowModal();
         }
+      });
+    }
+
+
+    if (dom.refreshAttendanceAdminBtn) {
+      dom.refreshAttendanceAdminBtn.addEventListener("click", async () => {
+        await loadAttendanceAdminSessions();
+        renderAll();
+      });
+    }
+    if (dom.attendanceAdminDateFilter) {
+      dom.attendanceAdminDateFilter.addEventListener("change", async () => {
+        state.attendanceAdmin.dateFilter = dom.attendanceAdminDateFilter.value || "";
+        await loadAttendanceAdminSessions();
+        renderAttendanceAdmin();
+      });
+    }
+    if (dom.attendanceAdminLineFilter) {
+      dom.attendanceAdminLineFilter.addEventListener("change", async () => {
+        state.attendanceAdmin.lineFilter = dom.attendanceAdminLineFilter.value || "";
+        await loadAttendanceAdminSessions();
+        renderAttendanceAdmin();
+      });
+    }
+    if (dom.attendanceAdminSearchInput) {
+      dom.attendanceAdminSearchInput.addEventListener("input", () => {
+        state.attendanceAdmin.searchText = dom.attendanceAdminSearchInput.value || "";
+        renderAttendanceAdminRows();
+      });
+    }
+    if (dom.attendanceAdminSessionsBody) {
+      dom.attendanceAdminSessionsBody.addEventListener("click", handleAttendanceAdminSessionsClick);
+    }
+    if (dom.attendanceAdminRowsBody) {
+      dom.attendanceAdminRowsBody.addEventListener("click", handleAttendanceAdminRowsClick);
+    }
+    if (dom.closeAttendanceRowModalBtn) dom.closeAttendanceRowModalBtn.addEventListener("click", closeAttendanceRowModal);
+    if (dom.cancelAttendanceRowModalBtn) dom.cancelAttendanceRowModalBtn.addEventListener("click", closeAttendanceRowModal);
+    if (dom.saveAttendanceRowBtn) dom.saveAttendanceRowBtn.addEventListener("click", handleSaveAttendanceRowEdit);
+    if (dom.attendanceRowStationInput) {
+      dom.attendanceRowStationInput.addEventListener("change", () => {
+        renderAttendanceRowWorksBox(true);
+      });
+    }
+    if (dom.attendanceRowModal) {
+      dom.attendanceRowModal.addEventListener("click", (event) => {
+        if (event.target === dom.attendanceRowModal) closeAttendanceRowModal();
       });
     }
 
@@ -556,6 +681,7 @@ function handleResetRows() {
     renderRowsView();
     closeConfirmModal();
     closeOperatorModal();
+    closeAttendanceRowModal();
   }
 
   async function loadCurrentUserProfile() {
@@ -607,6 +733,15 @@ function handleResetRows() {
     );
   }
 
+  function canManageAttendance() {
+    return Boolean(
+      state.currentUserProfile &&
+        state.currentUserProfile.is_active === true &&
+        (state.currentUserProfile.can_manage_operators === true ||
+          normalizeText(state.currentUserProfile.role) === "ADMIN" ||
+          normalizeText(state.currentUserProfile.role) === "SUPERADMIN")
+    );
+  }
   function showAuthenticatedUI() {
     if (dom.authSection) dom.authSection.classList.add("hidden");
     if (dom.appSection) dom.appSection.classList.remove("hidden");
@@ -644,12 +779,14 @@ function handleResetRows() {
     if (dom.logoutBtn) dom.logoutBtn.classList.add("hidden");
     if (dom.openAttendanceBtn) dom.openAttendanceBtn.classList.add("hidden");
     if (dom.openOperatorsBtn) dom.openOperatorsBtn.classList.add("hidden");
+    if (dom.openAttendanceAdminBtn) dom.openAttendanceAdminBtn.classList.add("hidden");
 
     hideBox(dom.globalMessage);
   }
 
   function renderPermissions() {
     const adminAllowed = canManageOperators();
+    const attendanceAdminAllowed = canManageAttendance();
 
     if (dom.openOperatorsBtn) {
       dom.openOperatorsBtn.classList.toggle("hidden", !adminAllowed);
@@ -658,8 +795,14 @@ function handleResetRows() {
     if (dom.newOperatorBtn) {
       dom.newOperatorBtn.classList.toggle("hidden", !adminAllowed);
     }
+    if (dom.openAttendanceAdminBtn) {
+      dom.openAttendanceAdminBtn.classList.toggle("hidden", !attendanceAdminAllowed);
+    }
 
     if (!adminAllowed && state.activeMainView === "operators") {
+      state.activeMainView = "attendance";
+    }
+    if (!attendanceAdminAllowed && state.activeMainView === "attendanceAdmin") {
       state.activeMainView = "attendance";
     }
 
@@ -674,6 +817,12 @@ function handleResetRows() {
       dom.operatorsAdminView.classList.toggle(
         "hidden",
         state.activeMainView !== "operators" || !adminAllowed
+      );
+    }
+    if (dom.attendanceAdminView) {
+      dom.attendanceAdminView.classList.toggle(
+        "hidden",
+        state.activeMainView !== "attendanceAdmin" || !attendanceAdminAllowed
       );
     }
   }
@@ -987,6 +1136,8 @@ function handleResetRows() {
       assemblea_min: 0,
       sciopero_min: 0,
       final_min: finalMin,
+      lavorazioni: getWorkOptions(lineName, initialStation),
+      worksOpen: false,
       extrasOpen: false,
       dirty: false,
       removed: false
@@ -1097,6 +1248,8 @@ function handleRowTableInteraction(event) {
       sciopero_min: 0,
       final_min: 0,
       extrasOpen: false,
+      worksOpen: false,
+      lavorazioni: [...(rowToClone.lavorazioni || [])],
       sort_order: state.rows.length + 1,
       dirty: true
     };
@@ -1111,6 +1264,15 @@ function handleRowTableInteraction(event) {
     return;
   }
 
+  // Toggle apertura/chiusura lavorazioni
+  if (action === "toggle-works") {
+    if (Number.isNaN(rowIndex) || !state.rows[rowIndex]) return;
+    state.rows[rowIndex].worksOpen = !state.rows[rowIndex].worksOpen;
+    ensureRowLavorazioni(state.rows[rowIndex], false);
+    saveState();
+    renderRowsView();
+    return;
+  }
   // Toggle apertura/chiusura Eventi / anomalie
   if (action === "toggle-extras") {
     if (Number.isNaN(rowIndex) || !state.rows[rowIndex]) return;
@@ -1128,6 +1290,7 @@ function handleRowTableInteraction(event) {
   // Postazione: aggiorna senza rifare render immediato
   if (field === "postazione") {
     row.postazione = target.value;
+    row.lavorazioni = getWorkOptions(state.setup.lineName, row.postazione);
 
     row.final_min = calculateFinalMinutes(
       Number(row.work_min) || 0,
@@ -1143,6 +1306,19 @@ function handleRowTableInteraction(event) {
     return;
   }
 
+  if (field === "lavorazione") {
+    const value = target.value || "";
+    const current = Array.isArray(row.lavorazioni) ? [...row.lavorazioni] : [];
+    if (target.checked && !current.includes(value)) current.push(value);
+    if (!target.checked) {
+      const idx = current.indexOf(value);
+      if (idx >= 0) current.splice(idx, 1);
+    }
+    row.lavorazioni = current;
+    row.dirty = true;
+    saveState();
+    return;
+  }
   // Ore lavorate
   if (field === "workHours") {
     row.work_min = hoursStringToMinutes(target.value);
@@ -1294,6 +1470,7 @@ function handleRowTableInteraction(event) {
           assemblea_min: Number(row.assemblea_min) || 0,
           sciopero_min: Number(row.sciopero_min) || 0,
           final_min: Number(row.final_min) || 0,
+          lavorazioni: Array.isArray(row.lavorazioni) ? row.lavorazioni : [],
           dirty: Boolean(row.dirty),
           removed: Boolean(row.removed),
           created_by: state.user.id
@@ -1335,6 +1512,7 @@ function handleRowTableInteraction(event) {
     renderOperatorsDatalist();
     renderOperatorsFilters();
     renderOperatorsAdmin();
+    renderAttendanceAdmin();
   }
 
   function renderSetupForm() {
@@ -1455,7 +1633,7 @@ function handleRowTableInteraction(event) {
     if (!state.rows.length) {
       dom.attendanceTableBody.innerHTML = `
         <tr>
-          <td colspan="7">
+          <td colspan="8">
             <div class="muted">
               Nessuna riga caricata. Completa il setup e carica gli operatori della linea.
             </div>
@@ -1933,6 +2111,7 @@ function handleRowTableInteraction(event) {
       renderAll();
 
       closeOperatorModal();
+    closeAttendanceRowModal();
 
       showBox(dom.operatorsAdminMessage, "Operatore salvato correttamente.", "success");
     } catch (error) {
@@ -2030,6 +2209,243 @@ function handleRowTableInteraction(event) {
         "error"
       );
     }
+  }
+
+
+  async function loadAttendanceAdminSessions() {
+    if (!client || !canManageAttendance()) return;
+    try {
+      let query = client
+        .from("attendance_sessions")
+        .select("*")
+        .order("work_date", { ascending: false })
+        .order("line_name", { ascending: true });
+      if (state.attendanceAdmin.dateFilter) query = query.eq("work_date", state.attendanceAdmin.dateFilter);
+      if (state.attendanceAdmin.lineFilter) query = query.eq("line_name", state.attendanceAdmin.lineFilter);
+      const response = await query;
+      if (response.error) throw response.error;
+      state.attendanceAdmin.sessions = Array.isArray(response.data) ? response.data : [];
+      const lines = unique(state.attendanceAdmin.sessions.map((session) => session.line_name).filter(Boolean)).sort((a, b) => a.localeCompare(b, "it"));
+      if (dom.attendanceAdminLineFilter) {
+        const current = state.attendanceAdmin.lineFilter || "";
+        dom.attendanceAdminLineFilter.innerHTML = `<option value="">Tutte le linee</option>` + lines.map((line) => `<option value="${escapeAttribute(line)}">${escapeHtml(line)}</option>`).join("");
+        dom.attendanceAdminLineFilter.value = current;
+      }
+      if (state.attendanceAdmin.selectedSessionId) {
+        const stillExists = state.attendanceAdmin.sessions.some((item) => String(item.id) === String(state.attendanceAdmin.selectedSessionId));
+        if (!stillExists) {
+          state.attendanceAdmin.selectedSessionId = null;
+          state.attendanceAdmin.rows = [];
+        }
+      }
+    } catch (error) {
+      console.error("Errore riepilogo presenze:", error);
+      showBox(dom.attendanceAdminMessage, error.message || "Errore caricamento riepilogo presenze.", "error");
+    }
+  }
+  async function loadAttendanceAdminRows(sessionId) {
+    if (!client || !canManageAttendance() || !sessionId) return;
+    try {
+      const response = await client
+        .from("attendance_rows")
+        .select("*")
+        .eq("attendance_session_id", sessionId)
+        .order("sort_order", { ascending: true });
+      if (response.error) throw response.error;
+      state.attendanceAdmin.selectedSessionId = sessionId;
+      state.attendanceAdmin.rows = (Array.isArray(response.data) ? response.data : []).map((row) => ({
+        ...row,
+        lavorazioni: parseLavorazioni(row.lavorazioni)
+      }));
+    } catch (error) {
+      console.error("Errore dettaglio presenze:", error);
+      showBox(dom.attendanceAdminMessage, error.message || "Errore caricamento dettaglio presenze.", "error");
+    }
+  }
+  function renderAttendanceAdmin() {
+    if (!dom.attendanceAdminView || !canManageAttendance()) return;
+    if (dom.attendanceAdminDateFilter) dom.attendanceAdminDateFilter.value = state.attendanceAdmin.dateFilter || "";
+    if (dom.attendanceAdminSearchInput) dom.attendanceAdminSearchInput.value = state.attendanceAdmin.searchText || "";
+    renderAttendanceAdminSessions();
+    renderAttendanceAdminRows();
+  }
+  function renderAttendanceAdminSessions() {
+    if (!dom.attendanceAdminSessionsBody || !dom.attendanceAdminStats) return;
+    const sessions = state.attendanceAdmin.sessions || [];
+    dom.attendanceAdminStats.innerHTML = `
+      <div class="summary-item"><span class="label">Giornate</span><span class="value">${escapeHtml(String(sessions.length))}</span></div>
+      <div class="summary-item"><span class="label">Filtro data</span><span class="value">${escapeHtml(state.attendanceAdmin.dateFilter || "Tutte")}</span></div>
+      <div class="summary-item"><span class="label">Filtro linea</span><span class="value">${escapeHtml(state.attendanceAdmin.lineFilter || "Tutte")}</span></div>
+    `;
+    if (!sessions.length) {
+      dom.attendanceAdminSessionsBody.innerHTML = `<tr><td colspan="5"><div class="muted">Nessuna giornata salvata trovata.</div></td></tr>`;
+      return;
+    }
+    dom.attendanceAdminSessionsBody.innerHTML = sessions.map((session) => {
+      const isSelected = String(session.id) === String(state.attendanceAdmin.selectedSessionId);
+      return `
+        <tr class="${isSelected ? "is-selected" : ""}">
+          <td>${escapeHtml(session.work_date || "-")}</td>
+          <td>${escapeHtml(session.line_name || "-")}</td>
+          <td>${escapeHtml("-")}</td>
+          <td>${escapeHtml(formatMinutes(Number(session.base_net_minutes) || 0))}</td>
+          <td><button class="btn btn-secondary btn-small" type="button" data-action="load-session" data-id="${escapeAttribute(String(session.id))}">Apri dettaglio</button></td>
+        </tr>
+      `;
+    }).join("");
+  }
+  function renderAttendanceAdminRows() {
+    if (!dom.attendanceAdminRowsBody || !dom.attendanceAdminDetailTitle) return;
+    const session = (state.attendanceAdmin.sessions || []).find((item) => String(item.id) === String(state.attendanceAdmin.selectedSessionId));
+    const rows = state.attendanceAdmin.rows || [];
+    const search = normalizeText(state.attendanceAdmin.searchText || "");
+    const filtered = rows.filter((row) => {
+      const haystack = normalizeText([row.cognome, row.nome, row.line_day, row.postazione, ...(parseLavorazioni(row.lavorazioni))].join(" "));
+      return !search || haystack.includes(search);
+    });
+    const totalFinal = filtered.reduce((acc, row) => acc + (Number(row.final_min) || 0), 0);
+    dom.attendanceAdminDetailTitle.innerHTML = `
+      <div class="summary-item"><span class="label">Dettaglio</span><span class="value">${escapeHtml(session ? (session.work_date + " - " + session.line_name) : "Seleziona una giornata")}</span></div>
+      <div class="summary-item"><span class="label">Righe</span><span class="value">${escapeHtml(String(filtered.length))}</span></div>
+      <div class="summary-item"><span class="label">Finali filtrati</span><span class="value">${escapeHtml(formatMinutes(totalFinal))}</span></div>
+    `;
+    if (!state.attendanceAdmin.selectedSessionId) {
+      dom.attendanceAdminRowsBody.innerHTML = `<tr><td colspan="8"><div class="muted">Apri una giornata per vedere il dettaglio.</div></td></tr>`;
+      return;
+    }
+    if (!filtered.length) {
+      dom.attendanceAdminRowsBody.innerHTML = `<tr><td colspan="8"><div class="muted">Nessuna riga trovata.</div></td></tr>`;
+      return;
+    }
+    dom.attendanceAdminRowsBody.innerHTML = filtered.map((row) => {
+      const operatorLabel = [row.cognome, row.nome].filter(Boolean).join(" ").trim() || "Operatore";
+      const extras = `${Number(row.evento_min) || 0}/${Number(row.assemblea_min) || 0}/${Number(row.sciopero_min) || 0} min`;
+      return `
+        <tr>
+          <td>${escapeHtml(operatorLabel)}</td>
+          <td>${escapeHtml(row.line_day || "-")}</td>
+          <td>${escapeHtml(row.postazione || "-")}</td>
+          <td>${escapeHtml(formatWorksPreview(parseLavorazioni(row.lavorazioni)))}</td>
+          <td>${escapeHtml(minutesToHoursString(Number(row.work_min) || 0))}</td>
+          <td>${escapeHtml(formatMinutes(Number(row.final_min) || 0))}</td>
+          <td>${escapeHtml(extras)}</td>
+          <td><button class="btn btn-secondary btn-small" type="button" data-action="edit-attendance-row" data-id="${escapeAttribute(String(row.id))}">Modifica</button></td>
+        </tr>
+      `;
+    }).join("");
+  }
+  async function handleAttendanceAdminSessionsClick(event) {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    if (button.dataset.action === "load-session") {
+      await loadAttendanceAdminRows(button.dataset.id);
+      renderAttendanceAdmin();
+    }
+  }
+  function handleAttendanceAdminRowsClick(event) {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    if (button.dataset.action === "edit-attendance-row") {
+      const row = (state.attendanceAdmin.rows || []).find((item) => String(item.id) === String(button.dataset.id));
+      if (row) openAttendanceRowModal(row);
+    }
+  }
+  function openAttendanceRowModal(row) {
+    if (!dom.attendanceRowModal) return;
+    state.attendanceAdmin.editRow = { ...row, lavorazioni: parseLavorazioni(row.lavorazioni) };
+    const operatorLabel = [row.cognome, row.nome].filter(Boolean).join(" ").trim() || "Operatore";
+    setValue(dom.attendanceRowFormId, String(row.id || ""));
+    setValue(dom.attendanceRowSessionId, String(row.attendance_session_id || ""));
+    setValue(dom.attendanceRowOperatorInput, operatorLabel);
+    setValue(dom.attendanceRowLineInput, row.line_day || "");
+    setValue(dom.attendanceRowWorkHoursInput, minutesToHoursString(Number(row.work_min) || 0));
+    setValue(dom.attendanceRowEventoInput, String(Number(row.evento_min) || 0));
+    setValue(dom.attendanceRowAssembleaInput, String(Number(row.assemblea_min) || 0));
+    setValue(dom.attendanceRowScioperoInput, String(Number(row.sciopero_min) || 0));
+    const options = getStationOptions(row.line_day || "", row.postazione || "");
+    if (dom.attendanceRowStationInput) {
+      dom.attendanceRowStationInput.innerHTML = options.map((station) => `<option value="${escapeAttribute(station)}" ${station === row.postazione ? "selected" : ""}>${escapeHtml(station)}</option>`).join("");
+    }
+    renderAttendanceRowWorksBox(false);
+    hideBox(dom.attendanceRowModalMessage);
+    dom.attendanceRowModal.classList.remove("hidden");
+    dom.attendanceRowModal.setAttribute("aria-hidden", "false");
+  }
+  function renderAttendanceRowWorksBox(forceReset) {
+    if (!dom.attendanceRowWorksBox || !state.attendanceAdmin.editRow) return;
+    const row = state.attendanceAdmin.editRow;
+    row.postazione = dom.attendanceRowStationInput ? dom.attendanceRowStationInput.value : row.postazione;
+    const options = getWorkOptions(row.line_day || "", row.postazione || "");
+    if (forceReset) row.lavorazioni = [...options];
+    const selected = parseLavorazioni(row.lavorazioni);
+    if (!options.length) {
+      dom.attendanceRowWorksBox.innerHTML = `<div class="muted">Nessuna lavorazione configurata per questa postazione.</div>`;
+      return;
+    }
+    dom.attendanceRowWorksBox.innerHTML = options.map((work) => {
+      const checked = selected.includes(work) ? "checked" : "";
+      return `<label class="work-check"><input type="checkbox" value="${escapeAttribute(work)}" ${checked}><span>${escapeHtml(work)}</span></label>`;
+    }).join("");
+  }
+  function closeAttendanceRowModal() {
+    if (!dom.attendanceRowModal) return;
+    dom.attendanceRowModal.classList.add("hidden");
+    dom.attendanceRowModal.setAttribute("aria-hidden", "true");
+    state.attendanceAdmin.editRow = null;
+    hideBox(dom.attendanceRowModalMessage);
+  }
+  async function handleSaveAttendanceRowEdit() {
+    if (!canManageAttendance() || !state.attendanceAdmin.editRow) return;
+    const rowId = dom.attendanceRowFormId ? dom.attendanceRowFormId.value : "";
+    const sessionId = dom.attendanceRowSessionId ? dom.attendanceRowSessionId.value : "";
+    const workMin = hoursStringToMinutes(dom.attendanceRowWorkHoursInput ? dom.attendanceRowWorkHoursInput.value : 0);
+    const eventoMin = toNonNegativeInt(dom.attendanceRowEventoInput ? dom.attendanceRowEventoInput.value : 0);
+    const assembleaMin = toNonNegativeInt(dom.attendanceRowAssembleaInput ? dom.attendanceRowAssembleaInput.value : 0);
+    const scioperoMin = toNonNegativeInt(dom.attendanceRowScioperoInput ? dom.attendanceRowScioperoInput.value : 0);
+    const postazione = dom.attendanceRowStationInput ? dom.attendanceRowStationInput.value : "";
+    const checkedWorks = dom.attendanceRowWorksBox ? Array.from(dom.attendanceRowWorksBox.querySelectorAll("input[type='checkbox']:checked")).map((input) => input.value) : [];
+    const session = (state.attendanceAdmin.sessions || []).find((item) => String(item.id) === String(sessionId));
+    const finalMin = calculateFinalMinutes(workMin, Number(session && session.snack_min) || 0, Number(session && session.stops_min) || 0, eventoMin, assembleaMin, scioperoMin);
+    setButtonLoading(dom.saveAttendanceRowBtn, true, "Salvataggio...");
+    try {
+      const response = await client
+        .from("attendance_rows")
+        .update({
+          postazione,
+          work_min: workMin,
+          evento_min: eventoMin,
+          assemblea_min: assembleaMin,
+          sciopero_min: scioperoMin,
+          final_min: finalMin,
+          lavorazioni: checkedWorks,
+          dirty: true
+        })
+        .eq("id", rowId)
+        .select();
+      if (response.error) throw response.error;
+      await loadAttendanceAdminRows(sessionId);
+      renderAttendanceAdmin();
+      closeAttendanceRowModal();
+      showBox(dom.attendanceAdminMessage, "Presenza modificata correttamente.", "success");
+    } catch (error) {
+      console.error("Errore modifica presenza:", error);
+      showBox(dom.attendanceRowModalMessage, error.message || "Errore durante il salvataggio modifica.", "error");
+    } finally {
+      setButtonLoading(dom.saveAttendanceRowBtn, false, "Salva modifica");
+    }
+  }
+  function parseLavorazioni(value) {
+    if (Array.isArray(value)) return value;
+    if (!value) return [];
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return value.split(",").map((item) => item.trim()).filter(Boolean);
+      }
+    }
+    return [];
   }
 
   function openConfirmModal() {
@@ -2429,6 +2845,8 @@ function handleRowTableInteraction(event) {
             assemblea_min: Number(row.assemblea_min) || 0,
             sciopero_min: Number(row.sciopero_min) || 0,
             final_min: Number(row.final_min) || 0,
+            lavorazioni: Array.isArray(row.lavorazioni) ? row.lavorazioni : [],
+            worksOpen: Boolean(row.worksOpen),
             extrasOpen: Boolean(row.extrasOpen),
             dirty: Boolean(row.dirty),
             removed: Boolean(row.removed)
@@ -2473,6 +2891,15 @@ function handleRowTableInteraction(event) {
       lineFilter: "",
       statusFilter: "active"
     };
+    state.attendanceAdmin = {
+      sessions: [],
+      rows: [],
+      selectedSessionId: null,
+      dateFilter: "",
+      lineFilter: "",
+      searchText: "",
+      editRow: null
+    };
 
     hideBox(dom.authErrors);
     hideBox(dom.wizardErrors);
@@ -2499,6 +2926,51 @@ function handleRowTableInteraction(event) {
 
       button.classList.toggle("is-active", isActive);
     });
+  }
+
+
+  function getWorkOptions(lineName, stationName) {
+    const lineMap = WORKS_BY_LINE_STATION[lineName] || {};
+    const works = Array.isArray(lineMap[stationName]) ? [...lineMap[stationName]] : [];
+    return works;
+  }
+  function ensureRowLavorazioni(row, forceReset) {
+    if (!row) return [];
+    const options = getWorkOptions(row.line_day || state.setup.lineName, row.postazione);
+    if (forceReset || !Array.isArray(row.lavorazioni)) {
+      row.lavorazioni = [...options];
+      return row.lavorazioni;
+    }
+    row.lavorazioni = row.lavorazioni.filter((item) => options.includes(item));
+    if (!row.lavorazioni.length && options.length) {
+      row.lavorazioni = [...options];
+    }
+    return row.lavorazioni;
+  }
+  function renderWorksPanel(row, index, lineName) {
+    const options = getWorkOptions(lineName || row.line_day, row.postazione);
+    if (!options.length) {
+      return `<div class="works-panel"><div class="muted">Nessuna lavorazione configurata per questa postazione.</div></div>`;
+    }
+    const selected = Array.isArray(row.lavorazioni) ? row.lavorazioni : options;
+    return `
+      <div class="works-panel">
+        ${options.map((work) => {
+          const checked = selected.includes(work) ? "checked" : "";
+          return `
+            <label class="work-check">
+              <input type="checkbox" value="${escapeAttribute(work)}" ${checked} data-row-index="${index}" data-field="lavorazione">
+              <span>${escapeHtml(work)}</span>
+            </label>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+  function formatWorksPreview(works) {
+    if (!Array.isArray(works) || !works.length) return "Non specificate";
+    if (works.length <= 2) return works.join(", ");
+    return works.slice(0, 2).join(", ") + " +" + (works.length - 2);
   }
 
   function getStationOptions(lineName, extraStation) {

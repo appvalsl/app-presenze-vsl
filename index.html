@@ -370,6 +370,79 @@
 
             <div id="operatorsAdminMessage" class="message hidden" role="alert" aria-live="polite"></div>
 
+            <div class="card inline-card full-admin-panel">
+              <div class="card-header compact-header">
+                <h3>Utenti e permessi</h3>
+                <p>Gestisci da frontend gli utenti applicazione: ruolo admin/user, permesso gestione e stato attivo.</p>
+              </div>
+              <div class="actions toolbar">
+                <button id="refreshUsersAdminBtn" class="btn btn-secondary" type="button">Aggiorna utenti</button>
+              </div>
+              <div id="usersAdminMessage" class="message hidden" role="alert" aria-live="polite"></div>
+              <div class="table-wrap">
+                <table class="attendance-table users-admin-table">
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>Ruolo</th>
+                      <th>Gestione</th>
+                      <th>Attivo</th>
+                      <th>Azioni</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersAdminTableBody">
+                    <tr>
+                      <td colspan="5"><div class="muted">Premi “Aggiorna utenti” per caricare gli utenti applicazione.</div></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card inline-card full-admin-panel">
+              <div class="card-header compact-header">
+                <h3>Presenze salvate</h3>
+                <p>Apri il pannello dedicato per consultare e modificare sessioni e righe presenza salvate da tutti gli utenti.</p>
+              </div>
+              <div class="actions toolbar">
+                <button id="openAttendanceFromApplicationBtn" class="btn btn-primary" type="button">Apri gestione presenze salvate</button>
+              </div>
+            </div>
+
+            <div class="card inline-card application-admin-panel">
+              <div class="card-header compact-header">
+                <h3>Editor avanzato tabelle</h3>
+                <p>Strumento tecnico per interventi controllati su tabelle applicative. Per le presenze usa preferibilmente “Presenze salvate”.</p>
+              </div>
+              <div class="form-grid form-grid-3">
+                <div class="field">
+                  <label for="applicationTableSelect">Tabella</label>
+                  <select id="applicationTableSelect">
+                    <option value="operators">Operatori</option>
+                    <option value="app_users">Utenti / permessi</option>
+                    <option value="attendance_sessions">Sessioni presenze</option>
+                    <option value="attendance_rows">Righe presenze</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>&nbsp;</label>
+                  <button id="loadApplicationTableBtn" class="btn btn-secondary" type="button">Carica tabella</button>
+                </div>
+                <div class="field">
+                  <label>&nbsp;</label>
+                  <button id="clearApplicationTableBtn" class="btn btn-secondary" type="button">Svuota vista</button>
+                </div>
+              </div>
+              <div id="applicationAdminMessage" class="message hidden" role="alert" aria-live="polite"></div>
+              <div id="applicationAdminTableWrap" class="table-wrap hidden">
+                <table class="attendance-table application-table">
+                  <thead id="applicationAdminTableHead"></thead>
+                  <tbody id="applicationAdminTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+
             <div class="card inline-card">
               <div class="form-grid">
                 <div class="field">

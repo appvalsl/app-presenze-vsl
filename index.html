@@ -375,8 +375,26 @@
                 <h3>Utenti e permessi</h3>
                 <p>Gestisci da frontend gli utenti applicazione: ruolo admin/user, permesso gestione e stato attivo.</p>
               </div>
+              <div class="form-grid form-grid-3 users-add-grid">
+                <div class="field">
+                  <label for="newAppUserEmailInput">Email utente</label>
+                  <input id="newAppUserEmailInput" type="email" placeholder="nome.cognome@valentinoshoeslab.com">
+                </div>
+                <div class="field">
+                  <label for="newAppUserIdInput">UUID Supabase Auth</label>
+                  <input id="newAppUserIdInput" type="text" placeholder="Incolla UUID da Authentication > Users">
+                </div>
+                <div class="field">
+                  <label for="newAppUserRoleInput">Ruolo iniziale</label>
+                  <select id="newAppUserRoleInput">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              </div>
               <div class="actions toolbar">
                 <button id="refreshUsersAdminBtn" class="btn btn-secondary" type="button">Aggiorna utenti</button>
+                <button id="addAppUserBtn" class="btn btn-primary" type="button">Aggiungi utente a Gestione applicazione</button>
               </div>
               <div id="usersAdminMessage" class="message hidden" role="alert" aria-live="polite"></div>
               <div class="table-wrap">
@@ -398,79 +416,7 @@
                 </table>
               </div>
             </div>
-
-            <div class="card inline-card full-admin-panel">
-              <div class="card-header compact-header">
-                <h3>Presenze salvate</h3>
-                <p>Apri il pannello dedicato per consultare e modificare sessioni e righe presenza salvate da tutti gli utenti.</p>
-              </div>
-              <div class="actions toolbar">
-                <button id="openAttendanceFromApplicationBtn" class="btn btn-primary" type="button">Apri gestione presenze salvate</button>
-              </div>
-            </div>
-
-            <div class="card inline-card application-admin-panel">
-              <div class="card-header compact-header">
-                <h3>Editor avanzato tabelle</h3>
-                <p>Strumento tecnico per interventi controllati su tabelle applicative. Per le presenze usa preferibilmente “Presenze salvate”.</p>
-              </div>
-              <div class="form-grid form-grid-3">
-                <div class="field">
-                  <label for="applicationTableSelect">Tabella</label>
-                  <select id="applicationTableSelect">
-                    <option value="operators">Operatori</option>
-                    <option value="app_users">Utenti / permessi</option>
-                    <option value="attendance_sessions">Sessioni presenze</option>
-                    <option value="attendance_rows">Righe presenze</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>&nbsp;</label>
-                  <button id="loadApplicationTableBtn" class="btn btn-secondary" type="button">Carica tabella</button>
-                </div>
-                <div class="field">
-                  <label>&nbsp;</label>
-                  <button id="clearApplicationTableBtn" class="btn btn-secondary" type="button">Svuota vista</button>
-                </div>
-              </div>
-              <div id="applicationAdminMessage" class="message hidden" role="alert" aria-live="polite"></div>
-              <div id="applicationAdminTableWrap" class="table-wrap hidden">
-                <table class="attendance-table application-table">
-                  <thead id="applicationAdminTableHead"></thead>
-                  <tbody id="applicationAdminTableBody"></tbody>
-                </table>
-              </div>
-            </div>
-
-
-            <div class="card inline-card">
-              <div class="form-grid">
-                <div class="field">
-                  <label for="operatorsSearchInput">Cerca</label>
-                  <input id="operatorsSearchInput" type="text" placeholder="Nome, cognome, ID operatore, CDC">
-                </div>
-                <div class="field">
-                  <label for="operatorsLineFilter">Filtro linea</label>
-                  <select id="operatorsLineFilter">
-                    <option value="">Tutte le linee</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="operatorsStatusFilter">Stato</label>
-                  <select id="operatorsStatusFilter">
-                    <option value="active">Solo attivi</option>
-                    <option value="all">Tutti</option>
-                    <option value="inactive">Solo non attivi</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>&nbsp;</label>
-                  <button id="refreshOperatorsBtn" class="btn btn-secondary" type="button">Aggiorna elenco</button>
-                </div>
-              </div>
-            </div>
-
-            <div id="operatorsAdminStats" class="summary-box compact"></div>
+<div id="operatorsAdminStats" class="summary-box compact"></div>
 
             <div class="table-wrap">
               <table class="attendance-table operators-table">

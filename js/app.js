@@ -2971,7 +2971,6 @@ function handleRowTableInteraction(event) {
           <tr>
             <td data-label="Operatore" class="cell-operator">
               <div class="operator-name">${escapeHtml(operatorLabel)}</div>
-              
             </td>
 
 
@@ -4738,3 +4737,141 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+
+/* ===== ADMIN FEATURES MERGED IN APP.JS ===== */
+(function () {
+  "use strict";
+  const client = window.AppSupabase && window.AppSupabase.getClient ? window.AppSupabase.getClient() : null;
+  const state = { user: null, profile: null, sessions: [], rows: [], selectedSessionId: null };
+  const $ = (id) => document.getElementById(id);
+  const norm = (v) => String(v || "").trim().toUpperCase();
+  const esc = (v) => String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
+  const minToHours = (m) => ((Number(m)||0)/60).toFixed(2);
+  const fmtMin = (m) => `${Number(m)||0} min`;
+  function show(el, msg, type){ if(!el) return; el.textContent=msg; el.className=`message ${type||"info"}`; el.classList.remove("hidden"); }
+  function hide(el){ if(!el) return; el.textContent=""; el.className="message hidden"; }
+  function isAdmin(){ return state.profile && state.profile.is_active !== false && (state.profile.can_manage_operators === true || norm(state.profile.role)==="ADMIN" || norm(state.profile.role)==="SUPERADMIN"); }
+  async function init() {
+    if (!client) return;
+    setTimeout(async () => {
+      await loadProfile();
+      if (isAdmin()) {
+        if ($("openOperatorsBtn")) { $("openOperatorsBtn").classList.remove("hidden"); $("openOperatorsBtn").textContent = "Gestione applicazione"; }
+        if ($("openAttendanceAdminBtn")) $("openAttendanceAdminBtn").classList.remove("hidden");
+        enhanceApplicationAdmin();
+      }
+      bind();
+    }, 500);
+  }
+  async function loadProfile(){
+    const session = await client.auth.getSession();
+    state.user = session && session.data && session.data.session ? session.data.session.user : null;
+    if (!state.user) return;
+    const res = await client.from("app_users").select("user_id,email,role,can_manage_operators,is_active").eq("user_id", state.user.id).maybeSingle();
+    state.profile = res.data || { user_id: state.user.id, email: state.user.email, role: "user", can_manage_operators:false, is_active:true };
+  }
+  function bind(){
+    const riepilogo = $("openAttendanceAdminBtn");
+    if (riepilogo && !riepilogo.dataset.boundAdminExt) {
+      riepilogo.dataset.boundAdminExt = "1";
+      riepilogo.addEventListener("click", async () => { await openAttendanceAdmin(); });
+    }
+    if ($("refreshAttendanceAdminBtn")) $("refreshAttendanceAdminBtn").onclick = loadSessions;
+    if ($("attendanceAdminDateFilter")) $("attendanceAdminDateFilter").onchange = loadSessions;
+    if ($("attendanceAdminLineFilter")) $("attendanceAdminLineFilter").onchange = loadSessions;
+    if ($("attendanceAdminSearchInput")) $("attendanceAdminSearchInput").oninput = renderRows;
+  }
+  function switchView(viewId){
+    ["attendanceView","operatorsAdminView","attendanceAdminView"].forEach(id => { const el=$(id); if(el) el.classList.toggle("hidden", id!==viewId); });
+  }
+  async function openAttendanceAdmin(){
+    if (!isAdmin()) return;
+    switchView("attendanceAdminView");
+    await loadSessions();
+  }
+  async function loadSessions(){
+    const msg=$("attendanceAdminMessage"); hide(msg);
+    let q = client.from("attendance_sessions").select("*").order("work_date", { ascending:false }).order("line_name", { ascending:true });
+    const d=$("attendanceAdminDateFilter")?.value || "";
+    const l=$("attendanceAdminLineFilter")?.value || "";
+    if (d) q=q.eq("work_date", d);
+    if (l) q=q.eq("line_name", l);
+    const res = await q;
+    if(res.error){ show(msg, res.error.message, "error"); return; }
+    state.sessions = res.data || [];
+    renderSessionFilter();
+    renderSessions();
+  }
+  function renderSessionFilter(){
+    const sel=$("attendanceAdminLineFilter"); if(!sel) return;
+    const cur=sel.value;
+    const lines=[...new Set(state.sessions.map(s=>s.line_name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"it"));
+    sel.innerHTML='<option value="">Tutte le linee</option>'+lines.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join("");
+    sel.value=cur;
+  }
+  function renderSessions(){
+    const body=$("attendanceAdminSessionsBody"); if(!body) return;
+    if(!state.sessions.length){ body.innerHTML='<tr><td colspan="5"><div class="muted">Nessuna giornata salvata trovata.</div></td></tr>'; return; }
+    body.innerHTML=state.sessions.map(s=>`<tr><td>${esc(s.work_date||"-")}</td><td>${esc(s.line_name||"-")}</td><td>${esc(s.start_time||"-")}</td><td>${esc(s.end_time||"-")}</td><td><button class="btn btn-secondary btn-small" data-session-id="${esc(s.id)}">Apri</button></td></tr>`).join("");
+    body.querySelectorAll("button[data-session-id]").forEach(b=>b.onclick=()=>loadRows(b.dataset.sessionId));
+  }
+  async function loadRows(id){
+    state.selectedSessionId=id;
+    const res=await client.from("attendance_rows").select("*").eq("attendance_session_id", id).order("sort_order", { ascending:true });
+    if(res.error){ show($("attendanceAdminMessage"), res.error.message, "error"); return; }
+    state.rows=res.data||[];
+    renderRows();
+  }
+  function parseWorks(v){ if(Array.isArray(v)) return v; if(!v) return []; try{const p=JSON.parse(v); return Array.isArray(p)?p:[];}catch{return [];} }
+  function renderRows(){
+    const body=$("attendanceAdminRowsBody"); if(!body) return;
+    const search=norm($("attendanceAdminSearchInput")?.value || "");
+    const rows=state.rows.filter(r=>!search || norm([r.cognome,r.nome,r.line_day,r.postazione,JSON.stringify(r.lavorazioni||[])].join(" ")).includes(search));
+    if(!state.selectedSessionId){ body.innerHTML='<tr><td colspan="8"><div class="muted">Apri una giornata per vedere il dettaglio.</div></td></tr>'; return; }
+    if(!rows.length){ body.innerHTML='<tr><td colspan="8"><div class="muted">Nessuna riga trovata.</div></td></tr>'; return; }
+    body.innerHTML=rows.map(r=>{
+      const works=parseWorks(r.lavorazioni).map(w=>typeof w==="object" ? w.nome : w).filter(Boolean).join(", ") || "-";
+      const name=[r.cognome,r.nome].filter(Boolean).join(" ") || "Operatore";
+      return `<tr><td>${esc(name)}</td><td>${esc(r.line_day||"-")}</td><td>${esc(r.postazione||"-")}</td><td>${esc(works)}</td><td>${esc(minToHours(r.work_min))}</td><td>${esc(fmtMin(r.final_min))}</td><td>${esc((r.evento_min||0)+"/"+(r.assemblea_min||0)+"/"+(r.sciopero_min||0))}</td><td><button class="btn btn-secondary btn-small" data-edit-row="${esc(r.id)}">Modifica</button></td></tr>`;
+    }).join("");
+    body.querySelectorAll("button[data-edit-row]").forEach(b=>b.onclick=()=>quickEditRow(b.dataset.editRow));
+  }
+  async function quickEditRow(id){
+    const row=state.rows.find(r=>String(r.id)===String(id)); if(!row) return;
+    const value=prompt("Ore lavorate", minToHours(row.work_min));
+    if(value===null) return;
+    const workMin=Math.max(0, Math.round(parseFloat(String(value).replace(",","."))*60)||0);
+    const session=state.sessions.find(s=>String(s.id)===String(row.attendance_session_id));
+    const finalMin=Math.max(0, workMin-(Number(session?.snack_min)||0)-(Number(session?.stops_min)||0)-(Number(row.evento_min)||0)-(Number(row.assemblea_min)||0)-(Number(row.sciopero_min)||0));
+    const res=await client.from("attendance_rows").update({work_min:workMin, final_min:finalMin, dirty:true}).eq("id", id).select();
+    if(res.error){ show($("attendanceAdminMessage"), res.error.message, "error"); return; }
+    await loadRows(row.attendance_session_id);
+  }
+  function enhanceApplicationAdmin(){
+    const view=$("operatorsAdminView"); if(!view || $("appTablesPanel")) return;
+    const msg=$("operatorsAdminMessage");
+    const panel=document.createElement("div");
+    panel.id="appTablesPanel";
+    panel.className="card inline-card app-tables-panel";
+    panel.innerHTML=`<div class="card-header compact-header"><h3>Tabelle applicazione</h3><p>Gestisci da frontend le principali aree applicative senza perdere la gestione operatori esistente.</p></div><div class="actions toolbar"><button id="goUsersBtn" class="btn btn-secondary" type="button">Utenti e permessi</button><button id="goAttendanceBtn" class="btn btn-secondary" type="button">Riepilogo presenze</button><button id="goOperatorsBtn" class="btn btn-secondary" type="button">Operatori</button></div><div id="usersQuickPanel" class="table-wrap hidden"><table class="attendance-table"><thead><tr><th>Email</th><th>Ruolo</th><th>Admin</th><th>Attivo</th><th>Azioni</th></tr></thead><tbody id="usersQuickBody"></tbody></table></div>`;
+    if(msg) msg.insertAdjacentElement("afterend", panel); else view.querySelector(".card")?.prepend(panel);
+    $("goAttendanceBtn").onclick=openAttendanceAdmin;
+    $("goUsersBtn").onclick=loadUsers;
+  }
+  async function loadUsers(){
+    const panel=$("usersQuickPanel"), body=$("usersQuickBody"); if(!panel||!body) return;
+    panel.classList.remove("hidden");
+    const res=await client.from("app_users").select("user_id,email,role,can_manage_operators,is_active").order("email", {ascending:true});
+    if(res.error){ body.innerHTML=`<tr><td colspan="5">${esc(res.error.message)}</td></tr>`; return; }
+    const users=res.data||[];
+    body.innerHTML=users.map(u=>`<tr><td>${esc(u.email||"-")}</td><td>${esc(u.role||"user")}</td><td>${u.can_manage_operators?"Sì":"No"}</td><td>${u.is_active?"Sì":"No"}</td><td><button class="btn btn-secondary btn-small" data-toggle-admin="${esc(u.user_id)}">${u.can_manage_operators?"Rendi user":"Rendi admin"}</button></td></tr>`).join("");
+    body.querySelectorAll("button[data-toggle-admin]").forEach(b=>b.onclick=()=>toggleAdmin(b.dataset.toggleAdmin, users.find(u=>u.user_id===b.dataset.toggleAdmin)));
+  }
+  async function toggleAdmin(id,u){
+    const admin=!!u.can_manage_operators;
+    const res=await client.from("app_users").update({role:admin?"user":"admin", can_manage_operators:!admin, is_active:true}).eq("user_id",id).select();
+    if(!res.error) loadUsers();
+  }
+  document.addEventListener("DOMContentLoaded", init);
+})();

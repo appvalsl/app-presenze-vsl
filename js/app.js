@@ -1343,6 +1343,11 @@ const InserimentoPresenzeApp = (() => {
       lineFilter: "",
       searchText: "",
       editRow: null
+    },
+    applicationAdmin: {
+      activeTable: "operators",
+      rows: [],
+      columns: []
     }
   };
 
@@ -1438,6 +1443,13 @@ dom.attendanceTableBody = document.getElementById("attendanceTableBody");
     dom.cancelAttendanceRowModalBtn = document.getElementById("cancelAttendanceRowModalBtn");
     dom.saveAttendanceRowBtn = document.getElementById("saveAttendanceRowBtn");
     dom.operatorsAdminMessage = document.getElementById("operatorsAdminMessage");
+    dom.applicationTableSelect = document.getElementById("applicationTableSelect");
+    dom.loadApplicationTableBtn = document.getElementById("loadApplicationTableBtn");
+    dom.clearApplicationTableBtn = document.getElementById("clearApplicationTableBtn");
+    dom.applicationAdminMessage = document.getElementById("applicationAdminMessage");
+    dom.applicationAdminTableWrap = document.getElementById("applicationAdminTableWrap");
+    dom.applicationAdminTableHead = document.getElementById("applicationAdminTableHead");
+    dom.applicationAdminTableBody = document.getElementById("applicationAdminTableBody");
     dom.operatorsSearchInput = document.getElementById("operatorsSearchInput");
     dom.operatorsLineFilter = document.getElementById("operatorsLineFilter");
     dom.operatorsStatusFilter = document.getElementById("operatorsStatusFilter");
@@ -1570,6 +1582,21 @@ function handleResetRows() {
         }
 
         state.activeMainView = "operators";
+        renderAll();
+      });
+    }
+
+    if (dom.openAttendanceAdminBtn) {
+      dom.openAttendanceAdminBtn.addEventListener("click", async () => {
+        hideBox(dom.globalMessage);
+        if (!canManageAttendance()) {
+          showBox(dom.globalMessage, "Non sei autorizzato a consultare le presenze.", "error");
+          return;
+        }
+        state.activeMainView = "attendanceAdmin";
+        renderPermissions();
+        renderAttendanceAdmin();
+        await loadAttendanceAdminSessions();
         renderAll();
       });
     }
@@ -1760,6 +1787,23 @@ function handleResetRows() {
       dom.attendanceRowModal.addEventListener("click", (event) => {
         if (event.target === dom.attendanceRowModal) closeAttendanceRowModal();
       });
+    }
+
+    if (dom.loadApplicationTableBtn) {
+      dom.loadApplicationTableBtn.addEventListener("click", async () => {
+        await loadApplicationAdminTable();
+      });
+    }
+    if (dom.clearApplicationTableBtn) {
+      dom.clearApplicationTableBtn.addEventListener("click", () => {
+        state.applicationAdmin.rows = [];
+        state.applicationAdmin.columns = [];
+        renderApplicationAdminTable();
+        hideBox(dom.applicationAdminMessage);
+      });
+    }
+    if (dom.applicationAdminTableBody) {
+      dom.applicationAdminTableBody.addEventListener("click", handleApplicationAdminClick);
     }
 
     const setupInputs = [
@@ -2847,7 +2891,7 @@ function handleRowTableInteraction(event) {
     if (!state.rows.length) {
       dom.attendanceTableBody.innerHTML = `
         <tr>
-          <td colspan="8">
+          <td colspan="7">
             <div class="muted">
               Nessuna riga caricata. Completa il setup e carica gli operatori della linea.
             </div>
@@ -2892,9 +2936,6 @@ function handleRowTableInteraction(event) {
               <div class="operator-meta">-</div>
             </td>
 
-            <td data-label="Ore std">
-              ${escapeHtml(String(Number(row.ore_standard) || 0))}
-            </td>
 
             <td data-label="Ore lavorate (h)">
               <input
@@ -3615,7 +3656,6 @@ function handleRowTableInteraction(event) {
     const selectedKeys = new Set(selected.map(workKey));
     dom.attendanceRowWorksBox.innerHTML = options.map((work) => {
       const checked = selectedKeys.has(workKey(work)) ? "checked" : "";
-      const carrelloText = work.carrello ? `Carrello ${escapeHtml(work.carrello)}` : "Carrello -";
       return `<label class="work-check"><input type="checkbox" ${checked} data-work-name="${escapeAttribute(work.nome)}" data-carrello="${escapeAttribute(work.carrello)}"><span class="work-check-text"><strong>${escapeHtml(work.nome)}</strong><em>${carrelloText}</em></span></label>`;
     }).join("");
   }
@@ -3685,6 +3725,106 @@ function handleRowTableInteraction(event) {
       }
     }
     return [];
+  }
+
+
+  const APPLICATION_TABLES = {
+    operators: { label: "Operatori", key: "id", order: "cognome" },
+    app_users: { label: "Utenti / permessi", key: "user_id", order: "email" },
+    attendance_sessions: { label: "Sessioni presenze", key: "id", order: "work_date" },
+    attendance_rows: { label: "Righe presenze", key: "id", order: "sort_order" }
+  };
+  async function loadApplicationAdminTable() {
+    if (!client || !canManageOperators()) return;
+    const tableName = dom.applicationTableSelect ? dom.applicationTableSelect.value : "operators";
+    const config = APPLICATION_TABLES[tableName];
+    if (!config) return;
+    state.applicationAdmin.activeTable = tableName;
+    setButtonLoading(dom.loadApplicationTableBtn, true, "Caricamento...");
+    hideBox(dom.applicationAdminMessage);
+    try {
+      let query = client.from(tableName).select("*").limit(200);
+      if (config.order && tableName !== "attendance_rows") {
+        query = query.order(config.order, { ascending: tableName === "attendance_sessions" ? false : true });
+      }
+      const response = await query;
+      if (response.error) throw response.error;
+      state.applicationAdmin.rows = Array.isArray(response.data) ? response.data : [];
+      state.applicationAdmin.columns = buildColumnsFromRows(state.applicationAdmin.rows);
+      renderApplicationAdminTable();
+      showBox(dom.applicationAdminMessage, "Tabella caricata: " + config.label + ".", "success");
+    } catch (error) {
+      console.error("Errore caricamento tabella applicazione:", error);
+      showBox(dom.applicationAdminMessage, error.message || "Errore caricamento tabella.", "error");
+    } finally {
+      setButtonLoading(dom.loadApplicationTableBtn, false, "Carica tabella");
+    }
+  }
+  function buildColumnsFromRows(rows) {
+    const columns = [];
+    rows.forEach((row) => {
+      Object.keys(row || {}).forEach((key) => {
+        if (!columns.includes(key)) columns.push(key);
+      });
+    });
+    return columns.slice(0, 12);
+  }
+  function renderApplicationAdminTable() {
+    if (!dom.applicationAdminTableWrap || !dom.applicationAdminTableHead || !dom.applicationAdminTableBody) return;
+    const rows = state.applicationAdmin.rows || [];
+    const columns = state.applicationAdmin.columns || [];
+    dom.applicationAdminTableWrap.classList.toggle("hidden", !rows.length);
+    if (!rows.length) {
+      dom.applicationAdminTableHead.innerHTML = "";
+      dom.applicationAdminTableBody.innerHTML = "";
+      return;
+    }
+    dom.applicationAdminTableHead.innerHTML = `<tr>${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("")}<th>Azioni</th></tr>`;
+    dom.applicationAdminTableBody.innerHTML = rows.map((row, index) => {
+      return `<tr>${columns.map((column) => `<td>${escapeHtml(formatGenericCell(row[column]))}</td>`).join("")}<td><button type="button" class="btn btn-secondary btn-small" data-action="edit-application-row" data-index="${index}">Modifica JSON</button></td></tr>`;
+    }).join("");
+  }
+  function formatGenericCell(value) {
+    if (value === null || value === undefined) return "-";
+    if (typeof value === "object") return JSON.stringify(value).slice(0, 120);
+    return String(value).slice(0, 120);
+  }
+  async function handleApplicationAdminClick(event) {
+    const button = event.target.closest("button[data-action]");
+    if (!button || button.dataset.action !== "edit-application-row") return;
+    const index = Number(button.dataset.index);
+    const row = state.applicationAdmin.rows[index];
+    if (!row) return;
+    const tableName = state.applicationAdmin.activeTable;
+    const config = APPLICATION_TABLES[tableName];
+    const keyField = config.key;
+    const keyValue = row[keyField];
+    if (!keyValue) {
+      showBox(dom.applicationAdminMessage, "Impossibile modificare: chiave record non trovata.", "error");
+      return;
+    }
+    const edited = prompt("Modifica JSON record. Attenzione: devi lasciare un JSON valido.", JSON.stringify(row, null, 2));
+    if (!edited) return;
+    let parsed;
+    try {
+      parsed = JSON.parse(edited);
+    } catch (error) {
+      showBox(dom.applicationAdminMessage, "JSON non valido. Modifica annullata.", "error");
+      return;
+    }
+    delete parsed[keyField];
+    setButtonLoading(button, true, "Salvo...");
+    try {
+      const response = await client.from(tableName).update(parsed).eq(keyField, keyValue).select();
+      if (response.error) throw response.error;
+      await loadApplicationAdminTable();
+      showBox(dom.applicationAdminMessage, "Record modificato correttamente.", "success");
+    } catch (error) {
+      console.error("Errore modifica record:", error);
+      showBox(dom.applicationAdminMessage, error.message || "Errore modifica record.", "error");
+    } finally {
+      setButtonLoading(button, false, "Modifica JSON");
+    }
   }
 
   function openConfirmModal() {
@@ -4216,13 +4356,11 @@ function handleRowTableInteraction(event) {
       <div class="works-panel">
         ${options.map((work) => {
           const checked = selectedKeys.has(workKey(work)) ? "checked" : "";
-          const carrelloText = work.carrello ? `Carrello ${escapeHtml(work.carrello)}` : "Carrello -";
           return `
             <label class="work-check">
               <input type="checkbox" ${checked} data-row-index="${index}" data-field="lavorazione" data-work-name="${escapeAttribute(work.nome)}" data-carrello="${escapeAttribute(work.carrello)}">
               <span class="work-check-text">
                 <strong>${escapeHtml(work.nome)}</strong>
-                <em>${carrelloText}</em>
               </span>
             </label>
           `;
@@ -4233,7 +4371,7 @@ function handleRowTableInteraction(event) {
   function formatWorksPreview(works) {
     const normalized = Array.isArray(works) ? works.map((item) => normalizeWorkItem(item)).filter((item) => item.nome) : [];
     if (!normalized.length) return "Non specificate";
-    const labels = normalized.map((item) => item.nome + (item.carrello ? " [C" + item.carrello + "]" : ""));
+    const labels = normalized.map((item) => item.nome);
     if (labels.length <= 2) return labels.join(", ");
     return labels.slice(0, 2).join(", ") + " +" + (labels.length - 2);
   }

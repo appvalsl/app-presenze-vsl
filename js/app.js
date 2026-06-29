@@ -2970,6 +2970,22 @@ function handleRowTableInteraction(event) {
               }
             </td>
 
+            <td data-label="Lavorazioni">
+              <button
+                type="button"
+                class="extras-toggle works-toggle ${Array.isArray(row.lavorazioni) && row.lavorazioni.length ? "has-values" : ""}"
+                data-row-index="${index}"
+                data-action="toggle-works"
+              >
+                ${row.worksOpen ? "−" : "+"} Specifica lavorazione
+              </button>
+              ${
+                row.worksOpen
+                  ? renderWorksPanel(row, index, state.setup.lineName)
+                  : `<div class="works-preview">${escapeHtml(formatWorksPreview(row.lavorazioni))}</div>`
+              }
+            </td>
+
             <td data-label="Postazione">
               <select
                 class="table-select"

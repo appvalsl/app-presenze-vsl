@@ -28,8 +28,7 @@
         <button id="menuToggle" class="hamburger" type="button" aria-label="Apri menu">☰</button>
         <div id="topbarMenu" class="topbar-menu">
           <button id="openAttendanceBtn" class="btn btn-secondary hidden" type="button">Presenze</button>
-          <button id="openOperatorsBtn" class="btn btn-secondary hidden" type="button">Gestione applicazione</button>
-          <button id="openAttendanceAdminBtn" class="btn btn-secondary hidden" type="button">Riepilogo presenze</button>
+          <button id="openOperatorsBtn" class="btn btn-secondary hidden" type="button">Gestione operatori</button>
           <span id="userBadge" class="user-badge hidden"></span>
           <button id="logoutBtn" class="btn btn-secondary hidden" type="button">Logout</button>
         </div>
@@ -273,9 +272,9 @@
                   <thead>
                     <tr>
                       <th>Operatore</th>
+                      <th>Ore std</th>
                       <th>Ore lavorate (h)</th>
                       <th>Extra</th>
-                      <th>Lavorazioni</th>
                       <th>Postazione</th>
                       <th>Finali</th>
                       <th>Azioni</th>
@@ -288,80 +287,12 @@
           </section>
         </section>
 
-
-        <section id="attendanceAdminView" class="view hidden">
-          <div class="card">
-            <div class="rows-top">
-              <div>
-                <h2>Riepilogo presenze</h2>
-                <p>Sezione riservata agli admin per consultare e modificare le presenze salvate.</p>
-              </div>
-              <div class="rows-top-right">
-                <button id="refreshAttendanceAdminBtn" class="btn btn-secondary" type="button">Aggiorna</button>
-              </div>
-            </div>
-            <div id="attendanceAdminMessage" class="message hidden" role="alert" aria-live="polite"></div>
-            <div class="card inline-card">
-              <div class="form-grid form-grid-3">
-                <div class="field">
-                  <label for="attendanceAdminDateFilter">Data</label>
-                  <input id="attendanceAdminDateFilter" type="date">
-                </div>
-                <div class="field">
-                  <label for="attendanceAdminLineFilter">Linea</label>
-                  <select id="attendanceAdminLineFilter">
-                    <option value="">Tutte le linee</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="attendanceAdminSearchInput">Cerca operatore/postazione/lavorazione</label>
-                  <input id="attendanceAdminSearchInput" type="text" placeholder="Scrivi per filtrare il dettaglio">
-                </div>
-              </div>
-            </div>
-            <div id="attendanceAdminStats" class="summary-box compact"></div>
-            <h3 class="admin-subtitle">Giornate salvate</h3>
-            <div class="table-wrap">
-              <table class="attendance-table">
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Linea</th>
-                    <th>Operatori</th>
-                    <th>Ore finali</th>
-                    <th>Azioni</th>
-                  </tr>
-                </thead>
-                <tbody id="attendanceAdminSessionsBody"></tbody>
-              </table>
-            </div>
-            <h3 class="admin-subtitle">Dettaglio presenze</h3>
-            <div id="attendanceAdminDetailTitle" class="summary-box compact"></div>
-            <div class="table-wrap">
-              <table class="attendance-table">
-                <thead>
-                  <tr>
-                    <th>Operatore</th>
-                    <th>Linea</th>
-                    <th>Postazione</th>
-                    <th>Lavorazioni</th>
-                    <th>Ore lav.</th>
-                    <th>Finali</th>
-                    <th>Extra</th>
-                    <th>Azioni</th>
-                  </tr>
-                </thead>
-                <tbody id="attendanceAdminRowsBody"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
         <section id="operatorsAdminView" class="view hidden">
           <div class="card">
             <div class="rows-top">
               <div>
-                <h2>Gestione applicazione</h2>
-                <p>Sezione riservata agli admin per modificare operatori e tabelle applicative.</p>
+                <h2>Gestione operatori</h2>
+                <p>Sezione riservata agli utenti autorizzati.</p>
               </div>
               <div class="rows-top-right">
                 <button id="newOperatorBtn" class="btn btn-primary hidden" type="button">Nuovo operatore</button>
@@ -370,53 +301,34 @@
 
             <div id="operatorsAdminMessage" class="message hidden" role="alert" aria-live="polite"></div>
 
-            <div class="card inline-card full-admin-panel">
-              <div class="card-header compact-header">
-                <h3>Utenti e permessi</h3>
-                <p>Gestisci da frontend gli utenti applicazione: ruolo admin/user, permesso gestione e stato attivo.</p>
-              </div>
-              <div class="form-grid form-grid-3 users-add-grid">
+            <div class="card inline-card">
+              <div class="form-grid">
                 <div class="field">
-                  <label for="newAppUserEmailInput">Email utente</label>
-                  <input id="newAppUserEmailInput" type="email" placeholder="nome.cognome@valentinoshoeslab.com">
+                  <label for="operatorsSearchInput">Cerca</label>
+                  <input id="operatorsSearchInput" type="text" placeholder="Nome, cognome, ID operatore, CDC">
                 </div>
                 <div class="field">
-                  <label for="newAppUserIdInput">UUID Supabase Auth</label>
-                  <input id="newAppUserIdInput" type="text" placeholder="Incolla UUID da Authentication > Users">
-                </div>
-                <div class="field">
-                  <label for="newAppUserRoleInput">Ruolo iniziale</label>
-                  <select id="newAppUserRoleInput">
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
+                  <label for="operatorsLineFilter">Filtro linea</label>
+                  <select id="operatorsLineFilter">
+                    <option value="">Tutte le linee</option>
                   </select>
                 </div>
-              </div>
-              <div class="actions toolbar">
-                <button id="refreshUsersAdminBtn" class="btn btn-secondary" type="button">Aggiorna utenti</button>
-                <button id="addAppUserBtn" class="btn btn-primary" type="button">Aggiungi utente a Gestione applicazione</button>
-              </div>
-              <div id="usersAdminMessage" class="message hidden" role="alert" aria-live="polite"></div>
-              <div class="table-wrap">
-                <table class="attendance-table users-admin-table">
-                  <thead>
-                    <tr>
-                      <th>Email</th>
-                      <th>Ruolo</th>
-                      <th>Gestione</th>
-                      <th>Attivo</th>
-                      <th>Azioni</th>
-                    </tr>
-                  </thead>
-                  <tbody id="usersAdminTableBody">
-                    <tr>
-                      <td colspan="5"><div class="muted">Premi “Aggiorna utenti” per caricare gli utenti applicazione.</div></td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div class="field">
+                  <label for="operatorsStatusFilter">Stato</label>
+                  <select id="operatorsStatusFilter">
+                    <option value="active">Solo attivi</option>
+                    <option value="all">Tutti</option>
+                    <option value="inactive">Solo non attivi</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>&nbsp;</label>
+                  <button id="refreshOperatorsBtn" class="btn btn-secondary" type="button">Aggiorna elenco</button>
+                </div>
               </div>
             </div>
-<div id="operatorsAdminStats" class="summary-box compact"></div>
+
+            <div id="operatorsAdminStats" class="summary-box compact"></div>
 
             <div class="table-wrap">
               <table class="attendance-table operators-table">
@@ -498,38 +410,5 @@
       </div>
     </div>
   </div>
-
-  <div id="attendanceRowModal" class="modal-overlay hidden" aria-hidden="true">
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="attendanceRowModalTitle">
-      <div class="modal-header">
-        <div>
-          <h2 id="attendanceRowModalTitle">Modifica presenza</h2>
-          <p>Aggiorna ore, extra, postazione e lavorazioni della riga selezionata.</p>
-        </div>
-        <button id="closeAttendanceRowModalBtn" class="btn btn-secondary modal-close-btn" type="button">Chiudi</button>
-      </div>
-      <div id="attendanceRowModalMessage" class="message hidden" role="alert" aria-live="polite"></div>
-      <input id="attendanceRowFormId" type="hidden">
-      <input id="attendanceRowSessionId" type="hidden">
-      <div class="form-grid">
-        <div class="field"><label for="attendanceRowOperatorInput">Operatore</label><input id="attendanceRowOperatorInput" type="text" disabled></div>
-        <div class="field"><label for="attendanceRowLineInput">Linea giornata</label><input id="attendanceRowLineInput" type="text" disabled></div>
-        <div class="field"><label for="attendanceRowStationInput">Postazione</label><select id="attendanceRowStationInput"></select></div>
-        <div class="field"><label for="attendanceRowWorkHoursInput">Ore lavorate</label><input id="attendanceRowWorkHoursInput" type="number" min="0" step="0.25" inputmode="decimal"></div>
-        <div class="field"><label for="attendanceRowEventoInput">Evento min</label><input id="attendanceRowEventoInput" type="number" min="0" step="1" inputmode="numeric"></div>
-        <div class="field"><label for="attendanceRowAssembleaInput">Assemblea min</label><input id="attendanceRowAssembleaInput" type="number" min="0" step="1" inputmode="numeric"></div>
-        <div class="field"><label for="attendanceRowScioperoInput">Sciopero min</label><input id="attendanceRowScioperoInput" type="number" min="0" step="1" inputmode="numeric"></div>
-      </div>
-      <div class="field field-full">
-        <label>Lavorazioni svolte</label>
-        <div id="attendanceRowWorksBox" class="works-panel always-open"></div>
-      </div>
-      <div class="actions split-actions modal-actions">
-        <button id="cancelAttendanceRowModalBtn" class="btn btn-secondary" type="button">Annulla</button>
-        <button id="saveAttendanceRowBtn" class="btn btn-primary" type="button">Salva modifica</button>
-      </div>
-    </div>
-  </div>
-
 </body>
 </html>

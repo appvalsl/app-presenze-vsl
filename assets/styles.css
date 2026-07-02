@@ -98,3 +98,32 @@
 .planned-calendar-delete{margin-left:10px;min-height:40px;padding:8px 12px;font-size:14px;}
 .planned-day-item-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;text-align:right;}
 @media(max-width:980px){.planned-choice-grid{grid-template-columns:1fr}.planned-choice-card{min-height:145px}.planned-choice-title{font-size:24px}.planned-day-item-right{justify-content:flex-start;text-align:left}.planned-calendar-delete{width:100%;margin-left:0}}
+
+
+/* ===== ASSENZE PROGRAMMATE - CALENDARIO COMPATTO + FILTRI INTEGRATI ===== */
+.planned-section-calendar{background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);}
+.planned-calendar-control-panel{border:1px solid #dce8f6;background:#f8fbff;border-radius:18px;padding:14px;margin-bottom:14px;}
+.planned-calendar-topline{display:grid;grid-template-columns:minmax(240px,330px) 1fr;gap:12px;align-items:stretch;}
+.planned-calendar-month-field{background:#fff;border:1px solid #dce8f6;border-radius:14px;padding:12px;}
+.planned-stats-inside-calendar{margin:0!important;display:grid!important;grid-template-columns:repeat(4,minmax(120px,1fr))!important;gap:8px!important;}
+.planned-stats-inside-calendar .summary-item{padding:9px 11px!important;border-radius:12px!important;background:#fff!important;}
+.planned-filter-box-inside-calendar{margin-top:12px;padding:12px!important;background:#fff!important;border-radius:14px!important;}
+.planned-filter-grid{grid-template-columns:repeat(4,minmax(0,1fr)) 1.4fr!important;gap:10px!important;}
+.planned-filter-search{grid-column:auto!important;}
+.planned-filter-box-inside-calendar input,.planned-filter-box-inside-calendar select,.planned-calendar-month-field input{min-height:46px!important;font-size:15px!important;border-radius:12px!important;padding:10px 12px!important;}
+.planned-filter-box-inside-calendar label,.planned-calendar-month-field label{font-size:13px!important;}
+.planned-calendar{margin-top:12px!important;gap:10px!important;}
+.planned-day{padding:12px!important;border-radius:16px!important;box-shadow:0 8px 20px rgba(15,23,42,.045)!important;}
+.planned-day-head{font-size:17px!important;padding-bottom:8px;border-bottom:1px solid #edf2f7;}
+.planned-day-count{padding:4px 9px!important;font-size:12px!important;}
+.planned-line-summary-all{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))!important;gap:7px!important;margin:10px 0!important;}
+.planned-line-pill{padding:8px 10px!important;border-radius:12px!important;}
+.planned-line-pill strong{font-size:13px!important;}
+.planned-line-pill span{font-size:12px!important;line-height:1.25;}
+.planned-line-complete{background:#ffffff!important;border-color:#dbeafe!important;}
+.planned-line-complete span:nth-child(2){color:#166534!important;font-weight:900!important;background:#ecfdf5;width:max-content;border-radius:999px;padding:3px 7px;}
+.planned-day-list{gap:5px!important;margin-top:8px!important;}
+.planned-day-item{font-size:14px!important;padding-top:6px!important;}
+.planned-calendar-delete{min-height:34px!important;padding:6px 10px!important;font-size:13px!important;}
+@media(max-width:1200px){.planned-calendar-topline{grid-template-columns:1fr;}.planned-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}.planned-filter-search{grid-column:1/-1!important;}.planned-stats-inside-calendar{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
+@media(max-width:760px){.planned-filter-grid{grid-template-columns:1fr!important;}.planned-stats-inside-calendar{grid-template-columns:1fr!important;}.planned-line-summary-all{grid-template-columns:1fr!important;}}

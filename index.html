@@ -15,7 +15,7 @@
 
 <body>
   <div class="app-shell">
-    <header class="topbar">
+    <header class="topbar app-main-header">
       <div class="topbar-left">
         <div class="brand-mark">IP</div>
         <div>
@@ -430,6 +430,19 @@
               </div>
             </div>
 
+            <div id="adminAuthorizationsPanel" class="card inline-card authorizations-panel hidden">
+              <div class="card-header compact-header">
+                <h3>Utenti e autorizzazioni</h3>
+                <p>Sezione riservata all'admin: imposta ruolo utente e linee autorizzate.</p>
+              </div>
+              <div id="authorizationsMessage" class="message hidden" role="alert" aria-live="polite"></div>
+              <div class="table-wrap">
+                <table class="attendance-table authorizations-table">
+                  <thead><tr><th>Email</th><th>Ruolo</th><th>Linee autorizzate</th><th>Attivo</th><th>Azioni</th></tr></thead>
+                  <tbody id="authorizationsBody"><tr><td colspan="5"><div class="muted">Caricamento autorizzazioni...</div></td></tr></tbody>
+                </table>
+              </div>
+            </div>
             <div id="operatorsAdminStats" class="summary-box compact"></div>
 
             <div class="table-wrap">

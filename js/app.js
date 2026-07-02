@@ -1178,7 +1178,10 @@ function handleResetRows() {
 
       state.operators = filterOperatorsForCurrentUser(mappedOperators);
 
-      state.operatorSearchIndex = state.operators
+      // La ricerca "Aggiungi operatore" deve restare globale: serve per aggiungere
+      // operatori esterni/prestati da altre linee. Il filtro allowed_lines resta valido
+      // solo per il caricamento automatico della linea, non per questa ricerca.
+      state.operatorSearchIndex = mappedOperators
         .filter((operator) => operator.isActive !== false)
         .map((operator) => {
           return {
@@ -1384,10 +1387,6 @@ function handleResetRows() {
 
     const operator = found.operator;
 
-    if (!canUseProductionLine(operator.lineaProduzione)) {
-      showBox(dom.rowsErrors, "Non sei autorizzato ad aggiungere operatori di questa linea.", "error");
-      return;
-    }
 
     if (isOperatorAlreadyInRows(operator)) {
       showBox(dom.rowsErrors, "Questo operatore è già presente nella tabella.", "error");
@@ -3436,14 +3435,21 @@ function handleRowTableInteraction(event) {
     return work.nome + "||" + work.carrello;
   }
   function getWorkOptions(lineName, stationName) {
+    const wantedLine = normalizeText(lineName || "").trim();
+    const wantedStation = normalizeText(stationName || "").trim();
+
     const dbWorks = Array.isArray(state.workOperations)
       ? state.workOperations.filter((item) => {
-          return normalizeText(item.linea).trim() === normalizeText(lineName).trim()
-                  && normalizeText(item.postazione).trim().includes(normalizeText(stationName).trim())
-
-            item.is_active !== false;
+          const itemLine = normalizeText(item.linea || item.line_name || item.line || "").trim();
+          const itemStation = normalizeText(item.postazione || item.station_name || item.station || "").trim();
+          const active = item.is_active !== false;
+          const sameLine = itemLine === wantedLine;
+          const sameStation = itemStation === wantedStation;
+          const compatibleStation = Boolean(wantedStation && itemStation && (itemStation.includes(wantedStation) || wantedStation.includes(itemStation)));
+          return active && sameLine && (sameStation || compatibleStation);
         })
       : [];
+
     if (dbWorks.length) {
       return dbWorks
         .sort((a, b) => {
@@ -3452,9 +3458,10 @@ function handleRowTableInteraction(event) {
           if (orderA !== orderB) return orderA - orderB;
           return String(a.lavorazione || "").localeCompare(String(b.lavorazione || ""), "it");
         })
-        .map((item) => normalizeWorkItem({ nome: item.lavorazione, carrello: item.carrello }))
+        .map((item) => normalizeWorkItem({ nome: item.lavorazione || item.nome || item.name, carrello: item.carrello }))
         .filter((item) => item.nome);
     }
+
     const lineMap = WORKS_BY_LINE_STATION[lineName] || {};
     const works = Array.isArray(lineMap[stationName]) ? lineMap[stationName] : [];
     return works.map((item) => normalizeWorkItem(item)).filter((item) => item.nome);
@@ -3476,11 +3483,15 @@ function handleRowTableInteraction(event) {
     return row.lavorazioni;
   }
   function renderWorksPanel(row, index, lineName) {
-    const options = getWorkOptions(lineName || row.line_day, row.postazione);
+    const baseOptions = getWorkOptions(lineName || row.line_day, row.postazione);
+    const existing = Array.isArray(row.lavorazioni)
+      ? row.lavorazioni.map((item) => normalizeWorkItem(item)).filter((item) => item.nome)
+      : [];
+    const options = baseOptions.length ? baseOptions : existing;
     if (!options.length) {
       return `<div class="works-panel"><div class="muted">Nessuna lavorazione configurata per questa postazione.</div></div>`;
     }
-    const selected = Array.isArray(row.lavorazioni) ? row.lavorazioni.map((item) => normalizeWorkItem(item)) : options;
+    const selected = existing.length ? existing : options;
     const selectedKeys = new Set(selected.map(workKey));
     return `
       <div class="works-panel">

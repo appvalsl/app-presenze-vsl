@@ -147,6 +147,7 @@ const InserimentoPresenzeApp = (() => {
     dom.logoutBtn = document.getElementById("logoutBtn");
     dom.openHomeBtn = document.getElementById("openHomeBtn");
     dom.openAttendanceBtn = document.getElementById("openAttendanceBtn");
+    dom.openPlannedAbsencesBtn = document.getElementById("openPlannedAbsencesBtn");
     dom.openOperatorsBtn = document.getElementById("openOperatorsBtn");
     dom.openAttendanceAdminBtn = document.getElementById("openAttendanceAdminBtn");
 
@@ -383,10 +384,7 @@ function handleResetRows() {
     }
     if (dom.homeOpenAttendanceAdminBtn) {
       dom.homeOpenAttendanceAdminBtn.addEventListener("click", async () => {
-        if (!canManageAttendance()) {
-          showBox(dom.globalMessage, "Non sei autorizzato a consultare le presenze.", "error");
-          return;
-        }
+        if (!canManageAttendance()) { showBox(dom.globalMessage, "Non sei autorizzato a consultare le presenze.", "error"); return; }
         state.activeMainView = "attendanceAdmin";
         renderPermissions();
         renderAttendanceAdmin();
@@ -396,10 +394,7 @@ function handleResetRows() {
     }
     if (dom.homeOpenOperatorsBtn) {
       dom.homeOpenOperatorsBtn.addEventListener("click", () => {
-        if (!canManageOperators()) {
-          showBox(dom.globalMessage, "Non sei autorizzato a gestire l'applicazione.", "error");
-          return;
-        }
+        if (!canManageOperators()) { showBox(dom.globalMessage, "Non sei autorizzato a gestire l'applicazione.", "error"); return; }
         state.activeMainView = "operators";
         hideBox(dom.globalMessage);
         renderAll();
@@ -864,9 +859,7 @@ function handleResetRows() {
   function showAuthenticatedUI() {
     if (dom.authSection) dom.authSection.classList.add("hidden");
     if (dom.appSection) dom.appSection.classList.remove("hidden");
-    if (state.activeMainView === "attendance" && !state.rows.length && !state.setup.lineName) {
-      state.activeMainView = "home";
-    }
+    if (state.activeMainView === "attendance" && !state.rows.length && !state.setup.lineName) { state.activeMainView = "home"; }
 
     if (dom.userBadge) {
       const email =
@@ -883,6 +876,7 @@ function handleResetRows() {
 
     if (dom.logoutBtn) dom.logoutBtn.classList.remove("hidden");
     if (dom.openHomeBtn) dom.openHomeBtn.classList.remove("hidden");
+    if (dom.openPlannedAbsencesBtn) dom.openPlannedAbsencesBtn.classList.remove("hidden");
     if (dom.openAttendanceBtn) dom.openAttendanceBtn.classList.remove("hidden");
 
     hideBox(dom.authErrors);
@@ -901,6 +895,7 @@ function handleResetRows() {
 
     if (dom.logoutBtn) dom.logoutBtn.classList.add("hidden");
     if (dom.openHomeBtn) dom.openHomeBtn.classList.add("hidden");
+    if (dom.openPlannedAbsencesBtn) dom.openPlannedAbsencesBtn.classList.add("hidden");
     if (dom.openAttendanceBtn) dom.openAttendanceBtn.classList.add("hidden");
     if (dom.openOperatorsBtn) dom.openOperatorsBtn.classList.add("hidden");
     if (dom.openAttendanceAdminBtn) dom.openAttendanceAdminBtn.classList.add("hidden");
@@ -930,22 +925,10 @@ function handleResetRows() {
       state.activeMainView = "home";
     }
 
-    if (dom.homeView) {
-      dom.homeView.classList.toggle("hidden", state.activeMainView !== "home");
-    }
-    if (dom.plannedAbsencesView && state.activeMainView !== "plannedAbsences") {
-      dom.plannedAbsencesView.classList.add("hidden");
-    }
-
-    document.querySelectorAll(".admin-only-card").forEach((card) => {
-      card.classList.toggle("hidden", !attendanceAdminAllowed && !adminAllowed);
-    });
-    if (dom.homeOpenAttendanceAdminBtn) {
-      dom.homeOpenAttendanceAdminBtn.classList.toggle("hidden", !attendanceAdminAllowed);
-    }
-    if (dom.homeOpenOperatorsBtn) {
-      dom.homeOpenOperatorsBtn.classList.toggle("hidden", !adminAllowed);
-    }
+    if (dom.homeView) { dom.homeView.classList.toggle("hidden", state.activeMainView !== "home"); }
+    if (dom.plannedAbsencesView && state.activeMainView !== "plannedAbsences") { dom.plannedAbsencesView.classList.add("hidden"); }
+    if (dom.homeOpenAttendanceAdminBtn) { dom.homeOpenAttendanceAdminBtn.classList.toggle("hidden", !attendanceAdminAllowed); }
+    if (dom.homeOpenOperatorsBtn) { dom.homeOpenOperatorsBtn.classList.toggle("hidden", !adminAllowed); }
 
     if (dom.attendanceView) {
       dom.attendanceView.classList.toggle(
@@ -3155,7 +3138,7 @@ function handleRowTableInteraction(event) {
     sessionStorage.removeItem(STORAGE_KEY);
 
     state.currentStep = 1;
-    state.activeMainView = "home";
+    state.activeMainView = "attendance";
     state.activeView = "setup";
     state.user = preservedUser;
     state.currentUserProfile = preservedProfile;
@@ -3258,7 +3241,7 @@ function handleRowTableInteraction(event) {
     sessionStorage.removeItem(STORAGE_KEY);
 
     state.currentStep = 1;
-    state.activeMainView = "home";
+    state.activeMainView = "attendance";
     state.activeView = "setup";
     state.user = null;
     state.currentUserProfile = null;
@@ -4120,22 +4103,7 @@ document.addEventListener("DOMContentLoaded", () => {
 })();
 
 
-/* ===== HOME PLANNED ABSENCES BRIDGE ===== */
-(function(){
-  document.addEventListener("DOMContentLoaded", function(){
-    setTimeout(function(){
-      var homeBtn=document.getElementById("homeOpenPlannedAbsencesBtn");
-      var topBtn=document.getElementById("openPlannedAbsencesBtn");
-      if(homeBtn && topBtn && !homeBtn.dataset.boundPlannedBridge){
-        homeBtn.dataset.boundPlannedBridge="1";
-        homeBtn.addEventListener("click", function(){ topBtn.click(); });
-      }
-    }, 900);
-  });
-})();
-
-
-/* ===== ASSENZE PROGRAMMATE - FRONTEND ===== */
+/* ===== ASSENZE PROGRAMMATE - FRONTEND BLOCCO ===== */
 (function(){
   "use strict";
   const client = window.AppSupabase && window.AppSupabase.getClient ? window.AppSupabase.getClient() : null;
@@ -4154,21 +4122,21 @@ document.addEventListener("DOMContentLoaded", () => {
   function view(){ ["homeView","attendanceView","operatorsAdminView","attendanceAdminView","plannedAbsencesView"].forEach(id=>{ const el=$(id); if(el) el.classList.toggle("hidden", id!=="plannedAbsencesView"); }); }
   function mapOperator(row){ const name=[row.cognome,row.nome].filter(Boolean).join(" ").trim() || row.nome || row.cognome || "Operatore"; const id=row.id ?? null; const line=row.lineaproduzione || row.lineaProduzione || row.linea_produzione || row.linea || row.line || ""; const idOp=row.idoperatore || row.idOperatore || row.id_operatore || ""; return { id, name, line:String(line||"").trim(), label:name+(idOp?" | ID: "+idOp:"")+(line?" | Linea: "+line:"") }; }
   async function loadOperators(){ const r=await client.from("operators").select("*").order("cognome",{ascending:true}); state.operators=r.error?[]:(r.data||[]).map(mapOperator); datalist(); lines(); }
-  async function loadAbsences(){ let q=client.from("planned_absences").select("*").order("absence_date",{ascending:true}).order("operator_name",{ascending:true}); if(!state.isAdmin) q=q.eq("created_by",state.user.id); const r=await q; if(r.error){ show($("plannedAbsencesMessage"),"Errore: "+r.error.message+". Esegui il file SQL incluso nella ZIP se la tabella non esiste.","error"); state.absences=[]; return; } state.absences=r.data||[]; }
+  async function loadAbsences(){ let q=client.from("planned_absences").select("*").order("absence_date",{ascending:true}).order("operator_name",{ascending:true}); if(!state.isAdmin) q=q.eq("created_by",state.user.id); const r=await q; if(r.error){ show($("plannedAbsencesMessage"),"Errore: "+r.error.message+". Controlla tabella/RLS planned_absences.","error"); state.absences=[]; return; } state.absences=r.data||[]; }
   function datalist(){ const dl=$("plannedAbsenceOperatorsList"); if(!dl) return; dl.innerHTML=state.operators.map(o=>`<option value="${esc(o.label)}"></option>`).join(""); }
   function lines(){ const sel=$("plannedAbsenceLineFilter"); if(!sel) return; const cur=sel.value; const lines=[...new Set(state.operators.map(o=>o.line).filter(Boolean).concat(state.absences.map(a=>a.line_name).filter(Boolean)))].sort((a,b)=>a.localeCompare(b,"it")); sel.innerHTML='<option value="">Tutte le linee</option>'+lines.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join(""); sel.value=cur; }
   function findOp(v){ const raw=String(v||"").trim(); if(!raw) return null; const n=norm(raw); return state.operators.find(o=>o.label===raw) || state.operators.find(o=>norm(o.label).includes(n) || norm(o.name).includes(n)) || null; }
   function read(){ const raw=($("plannedAbsenceOperator")?.value||"").trim(); const op=findOp(raw); const date=$("plannedAbsenceDate")?.value||""; const hours=Number(String($("plannedAbsenceHours")?.value||"0").replace(",",".")); const reason=$("plannedAbsenceReason")?.value||"ALTRO"; const notes=($("plannedAbsenceNotes")?.value||"").trim(); if(!date) return {ok:false,msg:"Inserisci la data."}; if(!raw) return {ok:false,msg:"Inserisci l'operatore."}; if(!Number.isFinite(hours)||hours<=0) return {ok:false,msg:"Inserisci ore maggiori di zero."}; return {ok:true,data:{absence_date:date,operator_id:op?op.id:null,operator_name:op?op.name:raw,line_name:op?op.line:"",hours,reason,notes,created_by:state.user.id,created_by_email:state.user.email||""}}; }
-  function reset(){ if($("plannedAbsenceId")) $("plannedAbsenceId").value=""; if($("plannedAbsenceFormTitle")) $("plannedAbsenceFormTitle").textContent="Nuova assenza"; if($("plannedAbsenceDate")) $("plannedAbsenceDate").value=todayIso(); if($("plannedAbsenceOperator")) $("plannedAbsenceOperator").value=""; if($("plannedAbsenceHours")) $("plannedAbsenceHours").value="8"; if($("plannedAbsenceReason")) $("plannedAbsenceReason").value="FERIE"; if($("plannedAbsenceNotes")) $("plannedAbsenceNotes").value=""; $("cancelPlannedAbsenceEditBtn")?.classList.add("hidden"); }
+  function reset(){ if($("plannedAbsenceId")) $("plannedAbsenceId").value=""; if($("plannedAbsenceFormTitle")) $("plannedAbsenceFormTitle").textContent="Inserisci una nuova assenza"; if($("plannedAbsenceDate")) $("plannedAbsenceDate").value=todayIso(); if($("plannedAbsenceOperator")) $("plannedAbsenceOperator").value=""; if($("plannedAbsenceHours")) $("plannedAbsenceHours").value="8"; if($("plannedAbsenceReason")) $("plannedAbsenceReason").value="FERIE"; if($("plannedAbsenceNotes")) $("plannedAbsenceNotes").value=""; $("cancelPlannedAbsenceEditBtn")?.classList.add("hidden"); }
   async function save(){ hide($("plannedAbsencesMessage")); await profile(); const p=read(); if(!p.ok){ show($("plannedAbsencesMessage"),p.msg,"error"); return; } const id=$("plannedAbsenceId")?.value||""; const btn=$("savePlannedAbsenceBtn"); if(btn){btn.disabled=true;btn.textContent="Salvataggio...";} try{ let data={...p.data,updated_at:new Date().toISOString()}; let r; if(id){ delete data.created_by; delete data.created_by_email; r=await client.from("planned_absences").update(data).eq("id",id).select(); } else { r=await client.from("planned_absences").insert(data).select(); } if(r.error) throw r.error; reset(); await loadAbsences(); render(); show($("plannedAbsencesMessage"),"Assenza salvata correttamente.","success"); }catch(e){ show($("plannedAbsencesMessage"),e.message||"Errore salvataggio.","error"); } finally{ if(btn){btn.disabled=false;btn.textContent="Salva assenza";} } }
   function filters(){ const from=$("plannedAbsenceFromFilter")?.value||""; const to=$("plannedAbsenceToFilter")?.value||""; const reason=$("plannedAbsenceReasonFilter")?.value||""; const line=$("plannedAbsenceLineFilter")?.value||""; const s=norm($("plannedAbsenceSearch")?.value||""); state.filtered=state.absences.filter(a=>(!from||a.absence_date>=from)&&(!to||a.absence_date<=to)&&(!reason||a.reason===reason)&&(!line||a.line_name===line)&&(!s||norm([a.operator_name,a.line_name,a.reason,a.notes,a.created_by_email].join(" ")).includes(s))); }
   function fill(row){ $("plannedAbsenceId").value=row.id||""; $("plannedAbsenceFormTitle").textContent="Modifica assenza"; $("plannedAbsenceDate").value=row.absence_date||""; const op=state.operators.find(o=>String(o.id)===String(row.operator_id)); $("plannedAbsenceOperator").value=op?op.label:(row.operator_name||""); $("plannedAbsenceHours").value=String(row.hours||0); $("plannedAbsenceReason").value=row.reason||"ALTRO"; $("plannedAbsenceNotes").value=row.notes||""; $("cancelPlannedAbsenceEditBtn")?.classList.remove("hidden"); window.scrollTo({top:0,behavior:"smooth"}); }
-  async function clickTable(e){ const b=e.target.closest("button[data-action]"); if(!b) return; const row=state.absences.find(x=>String(x.id)===String(b.dataset.id)); if(!row) return; if(!canEdit(row)){ show($("plannedAbsencesMessage"),"Non sei autorizzato.","error"); return; } if(b.dataset.action==="edit"){ fill(row); return; } if(confirm("Eliminare questa assenza?")){ const r=await client.from("planned_absences").delete().eq("id",row.id); if(r.error) show($("plannedAbsencesMessage"),r.error.message,"error"); else { await loadAbsences(); render(); } } }
-  function stats(){ const box=$("plannedAbsenceStats"); if(!box) return; const h=state.filtered.reduce((a,r)=>a+(Number(r.hours)||0),0); box.innerHTML=`<div class="summary-item"><span class="label">Record</span><span class="value">${state.filtered.length}</span></div><div class="summary-item"><span class="label">Ore</span><span class="value">${h.toFixed(2)}</span></div><div class="summary-item"><span class="label">Vista</span><span class="value">${state.isAdmin?"Admin":"User"}</span></div>`; }
+  async function clickTable(e){ const b=e.target.closest("button[data-action]"); if(!b) return; const row=state.absences.find(x=>String(x.id)===String(b.dataset.id)); if(!row) return; if(!canEdit(row)){ show($("plannedAbsencesMessage"),"Non sei autorizzato.","error"); return; } if(b.dataset.action==="edit"){ fill(row); return; } if(confirm("Eliminare questa assenza?")){ const r=await client.from("planned_absences").delete().eq("id",row.id); if(r.error) show($("plannedAbsencesMessage"),r.error.message,"error"); else { await loadAbsences(); render(); show($("plannedAbsencesMessage"),"Assenza eliminata correttamente.","success"); } } }
+  function stats(){ const box=$("plannedAbsenceStats"); if(!box) return; const h=state.filtered.reduce((a,r)=>a+(Number(r.hours)||0),0); const people=new Set(state.filtered.map(r=>r.operator_name).filter(Boolean)); box.innerHTML=`<div class="summary-item"><span class="label">Record filtrati</span><span class="value">${state.filtered.length}</span></div><div class="summary-item"><span class="label">Ore assenza</span><span class="value">${h.toFixed(2)}</span></div><div class="summary-item"><span class="label">Operatori coinvolti</span><span class="value">${people.size}</span></div><div class="summary-item"><span class="label">Vista</span><span class="value">${state.isAdmin?"Admin":"User"}</span></div>`; }
   function table(){ const body=$("plannedAbsencesBody"); if(!body) return; if(!state.filtered.length){ body.innerHTML='<tr><td colspan="8"><div class="muted">Nessuna assenza trovata.</div></td></tr>'; return; } body.innerHTML=state.filtered.map(r=>`<tr><td data-label="Data">${esc(r.absence_date||"-")}</td><td data-label="Operatore"><strong>${esc(r.operator_name||"-")}</strong></td><td data-label="Linea">${esc(r.line_name||"-")}</td><td data-label="Ore">${esc(Number(r.hours||0).toFixed(2))}</td><td data-label="Motivo"><span class="planned-reason-badge reason-${esc(r.reason||"ALTRO")}">${esc(r.reason||"ALTRO")}</span></td><td data-label="Note">${esc(r.notes||"-")}</td><td data-label="Inserita da"><span class="planned-owner-badge">${esc(r.created_by_email||"-")}</span></td><td data-label="Azioni"><div class="planned-actions">${canEdit(r)?`<button class="btn btn-secondary btn-small" data-action="edit" data-id="${esc(r.id)}">Modifica</button><button class="btn btn-danger btn-small" data-action="delete" data-id="${esc(r.id)}">Elimina</button>`:'<span class="muted">Solo lettura</span>'}</div></td></tr>`).join(""); }
-  function calendar(){ const box=$("plannedAbsenceCalendar"); if(!box) return; const m=$("plannedAbsenceMonth")?.value||currentMonth(); const rows=state.absences.filter(a=>String(a.absence_date||"").startsWith(m)); if(!rows.length){ box.innerHTML='<div class="planned-empty">Nessuna assenza nel mese.</div>'; return; } const g=new Map(); rows.forEach(r=>{ const d=r.absence_date||"Senza data"; if(!g.has(d)) g.set(d,[]); g.get(d).push(r); }); box.innerHTML=[...g.entries()].map(([d,items])=>`<div class="planned-day"><div class="planned-day-head"><span>${esc(d)}</span><span class="planned-day-count">${items.length}</span></div><ul class="planned-day-list">${items.map(i=>`<li class="planned-day-item"><span>${esc(i.operator_name||"-")}</span><span>${esc(i.reason||"ALTRO")} - ${esc(Number(i.hours||0).toFixed(2))}h</span></li>`).join("")}</ul></div>`).join(""); }
+  function calendar(){ const box=$("plannedAbsenceCalendar"); if(!box) return; const m=$("plannedAbsenceMonth")?.value||currentMonth(); const rows=state.absences.filter(a=>String(a.absence_date||"").startsWith(m)); if(!rows.length){ box.innerHTML='<div class="planned-empty">Nessuna assenza nel mese selezionato.</div>'; return; } const g=new Map(); rows.forEach(r=>{ const d=r.absence_date||"Senza data"; if(!g.has(d)) g.set(d,[]); g.get(d).push(r); }); box.innerHTML=[...g.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([d,items])=>`<div class="planned-day"><div class="planned-day-head"><span>${esc(d)}</span><span class="planned-day-count">${items.length}</span></div><ul class="planned-day-list">${items.map(i=>`<li class="planned-day-item"><span>${esc(i.operator_name||"-")}</span><span>${esc(i.reason||"ALTRO")} - ${esc(Number(i.hours||0).toFixed(2))}h</span></li>`).join("")}</ul></div>`).join(""); }
   function render(){ lines(); filters(); stats(); table(); calendar(); }
   async function open(){ await profile(); reveal(); if(!state.user){ show($("globalMessage"),"Effettua il login.","error"); return; } view(); if(!$("plannedAbsenceDate").value) $("plannedAbsenceDate").value=todayIso(); if(!$("plannedAbsenceMonth").value) $("plannedAbsenceMonth").value=currentMonth(); await loadOperators(); await loadAbsences(); render(); }
-  function bind(){ const top=$("openPlannedAbsencesBtn"); if(top&&!top.dataset.boundAbs){ top.dataset.boundAbs="1"; top.addEventListener("click",open); } const home=$("homeOpenPlannedAbsencesBtn"); if(home&&!home.dataset.boundAbs){ home.dataset.boundAbs="1"; home.addEventListener("click",open); } const saveBtn=$("savePlannedAbsenceBtn"); if(saveBtn&&!saveBtn.dataset.boundAbs){ saveBtn.dataset.boundAbs="1"; saveBtn.addEventListener("click",save); } const cancel=$("cancelPlannedAbsenceEditBtn"); if(cancel&&!cancel.dataset.boundAbs){ cancel.dataset.boundAbs="1"; cancel.addEventListener("click",reset); } const refresh=$("refreshPlannedAbsencesBtn"); if(refresh&&!refresh.dataset.boundAbs){ refresh.dataset.boundAbs="1"; refresh.addEventListener("click",async()=>{ await loadAbsences(); render(); }); } ["plannedAbsenceFromFilter","plannedAbsenceToFilter","plannedAbsenceReasonFilter","plannedAbsenceLineFilter","plannedAbsenceSearch","plannedAbsenceMonth"].forEach(id=>{ const el=$(id); if(el&&!el.dataset.boundAbs){ el.dataset.boundAbs="1"; el.addEventListener(el.tagName==="SELECT"||el.type==="date"||el.type==="month"?"change":"input",render); } }); const body=$("plannedAbsencesBody"); if(body&&!body.dataset.boundAbs){ body.dataset.boundAbs="1"; body.addEventListener("click",clickTable); } }
+  function bind(){ const top=$("openPlannedAbsencesBtn"); if(top&&!top.dataset.boundAbs){ top.dataset.boundAbs="1"; top.addEventListener("click",open); } const home=$("homeOpenPlannedAbsencesBtn"); if(home&&!home.dataset.boundAbs){ home.dataset.boundAbs="1"; home.addEventListener("click",open); } const saveBtn=$("savePlannedAbsenceBtn"); if(saveBtn&&!saveBtn.dataset.boundAbs){ saveBtn.dataset.boundAbs="1"; saveBtn.addEventListener("click",save); } const cancel=$("cancelPlannedAbsenceEditBtn"); if(cancel&&!cancel.dataset.boundAbs){ cancel.dataset.boundAbs="1"; cancel.addEventListener("click",reset); } const refresh=$("refreshPlannedAbsencesBtn"); if(refresh&&!refresh.dataset.boundAbs){ refresh.dataset.boundAbs="1"; refresh.addEventListener("click",async()=>{ await loadAbsences(); render(); show($("plannedAbsencesMessage"),"Dati aggiornati.","success"); }); } ["plannedAbsenceFromFilter","plannedAbsenceToFilter","plannedAbsenceReasonFilter","plannedAbsenceLineFilter","plannedAbsenceSearch","plannedAbsenceMonth"].forEach(id=>{ const el=$(id); if(el&&!el.dataset.boundAbs){ el.dataset.boundAbs="1"; el.addEventListener(el.tagName==="SELECT"||el.type==="date"||el.type==="month"?"change":"input",render); } }); const body=$("plannedAbsencesBody"); if(body&&!body.dataset.boundAbs){ body.dataset.boundAbs="1"; body.addEventListener("click",clickTable); } }
   document.addEventListener("DOMContentLoaded", function(){ setTimeout(async()=>{ bind(); await profile(); reveal(); }, 1000); });
 })();

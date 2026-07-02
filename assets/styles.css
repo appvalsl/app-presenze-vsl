@@ -78,3 +78,7 @@
 
 /* ===== FTE ASSENZE PROGRAMMATE E RIEPILOGO LINEE ===== */
 #plannedAbsenceFte{background:#eef6ff;color:#174a87;font-weight:900}.planned-line-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin:12px 0}.planned-line-pill{display:flex;flex-direction:column;gap:3px;border:1px solid #dce8f6;background:#f8fbff;border-radius:14px;padding:10px 12px}.planned-line-pill strong{color:#173b70;font-size:14px}.planned-line-pill span{color:#5b6f8a;font-size:13px}.planned-day-item small{display:block;color:#5b6f8a;font-size:13px;margin-top:3px}.planned-absences-table{min-width:1180px}.planned-form-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.planned-form-grid .field-span-3{grid-column:1/-1}@media(max-width:1200px){.planned-form-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.planned-form-grid{grid-template-columns:1fr!important}.planned-line-summary{grid-template-columns:1fr}.planned-absences-table{min-width:0}}
+
+
+/* ===== RIEPILOGO FTE REALI PROGRAMMABILI PER LINEA ===== */
+.planned-line-pill-rich{gap:5px}.planned-line-pill-rich span:nth-child(3){color:#174a87;font-weight:800}.planned-line-pill-rich span:nth-child(4){color:#166534;font-weight:900;background:#ecfdf5;border-radius:10px;padding:4px 7px;display:inline-flex;width:max-content}.planned-line-summary{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}

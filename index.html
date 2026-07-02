@@ -128,37 +128,40 @@
                 </div>
               </div>
 
-              <div id="step2" class="wizard-step hidden" data-step="2">
-                <h3>Step 2 - Parametri giornata</h3>
+              
+              <div id="step2" class="wizard-step hidden setup-step2-friendly" data-step="2">
+                <div class="setup-step-title">
+                  <span class="step-badge">Step 2 di 3</span>
+                  <h3>Parametri della giornata</h3>
+                  <p>Imposta solo le informazioni essenziali: data, orari e pause. In basso trovi il riepilogo automatico.</p>
+                </div>
 
-                <div class="setup-section soft-section">
-                  <div class="section-title-row">
+                <div class="setup-block setup-block-primary">
+                  <div class="setup-block-head">
+                    <div class="setup-block-number">1</div>
                     <div>
-                      <h4>Orari della giornata</h4>
-                      <p class="section-desc">Indica data, ora di inizio e ora di fine della giornata lavorativa.</p>
+                      <h4>Data e orario di lavoro</h4>
+                      <p>Seleziona il giorno e scegli l'orario di inizio e fine produzione.</p>
                     </div>
                   </div>
-
-                  <div class="form-grid form-grid-3">
-                    <div class="field">
+                  <div class="form-grid form-grid-3 setup-friendly-grid">
+                    <div class="field friendly-field">
                       <label for="workDate">Data giornata</label>
                       <input id="workDate" type="date">
                     </div>
-
-                    <div class="field">
+                    <div class="field friendly-field">
                       <label for="startTime">Ora inizio lavoro</label>
                       <input id="startTime" type="time">
-                      <div class="quick-buttons">
+                      <div class="quick-buttons quick-buttons-large">
                         <button type="button" class="quick-btn" data-target="startTime" data-value="07:30">07:30</button>
                         <button type="button" class="quick-btn" data-target="startTime" data-value="08:00">08:00</button>
                         <button type="button" class="quick-btn" data-target="startTime" data-value="08:30">08:30</button>
                       </div>
                     </div>
-
-                    <div class="field">
+                    <div class="field friendly-field">
                       <label for="endTime">Ora fine lavoro</label>
                       <input id="endTime" type="time">
-                      <div class="quick-buttons">
+                      <div class="quick-buttons quick-buttons-large">
                         <button type="button" class="quick-btn" data-target="endTime" data-value="15:00">15:00</button>
                         <button type="button" class="quick-btn" data-target="endTime" data-value="17:00">17:00</button>
                         <button type="button" class="quick-btn" data-target="endTime" data-value="17:30">17:30</button>
@@ -168,19 +171,19 @@
                   </div>
                 </div>
 
-                <div class="setup-section">
-                  <div class="section-title-row">
+                <div class="setup-block">
+                  <div class="setup-block-head">
+                    <div class="setup-block-number">2</div>
                     <div>
-                      <h4>Struttura della giornata lavorativa</h4>
-                      <p class="section-desc">Inserisci le pause e i fermi che riducono il tempo produttivo.</p>
+                      <h4>Pause e fermi</h4>
+                      <p>Inserisci i minuti da togliere al tempo produttivo della giornata.</p>
                     </div>
                   </div>
-
-                  <div class="form-grid form-grid-3">
-                    <div class="field">
-                      <label for="lunchMin">Pausa pranzo (minuti)</label>
+                  <div class="form-grid form-grid-3 setup-friendly-grid">
+                    <div class="field friendly-field">
+                      <label for="lunchMin">Pausa pranzo</label>
                       <input id="lunchMin" type="number" min="0" step="1" inputmode="numeric" value="0">
-                      <div class="quick-buttons">
+                      <div class="quick-buttons quick-buttons-large">
                         <button type="button" class="quick-btn" data-target="lunchMin" data-value="0">0</button>
                         <button type="button" class="quick-btn" data-target="lunchMin" data-value="15">15</button>
                         <button type="button" class="quick-btn" data-target="lunchMin" data-value="30">30</button>
@@ -188,21 +191,19 @@
                         <button type="button" class="quick-btn" data-target="lunchMin" data-value="60">60</button>
                       </div>
                     </div>
-
-                    <div class="field">
-                      <label for="snackMin">Pausa breve / snack (minuti)</label>
+                    <div class="field friendly-field">
+                      <label for="snackMin">Pausa breve / snack</label>
                       <input id="snackMin" type="number" min="0" step="1" inputmode="numeric" value="0">
-                      <div class="quick-buttons">
+                      <div class="quick-buttons quick-buttons-large">
                         <button type="button" class="quick-btn" data-target="snackMin" data-value="0">0</button>
                         <button type="button" class="quick-btn" data-target="snackMin" data-value="10">10</button>
                         <button type="button" class="quick-btn" data-target="snackMin" data-value="15">15</button>
                       </div>
                     </div>
-
-                    <div class="field">
-                      <label for="stopsMin">Fermi produzione (minuti)</label>
+                    <div class="field friendly-field">
+                      <label for="stopsMin">Fermi produzione</label>
                       <input id="stopsMin" type="number" min="0" step="1" inputmode="numeric" value="0">
-                      <div class="quick-buttons">
+                      <div class="quick-buttons quick-buttons-large">
                         <button type="button" class="quick-btn" data-target="stopsMin" data-value="0">0</button>
                         <button type="button" class="quick-btn" data-target="stopsMin" data-value="5">5</button>
                         <button type="button" class="quick-btn" data-target="stopsMin" data-value="10">10</button>
@@ -210,22 +211,30 @@
                         <button type="button" class="quick-btn" data-target="stopsMin" data-value="30">30</button>
                       </div>
                     </div>
-
-                    <div class="field field-span-3">
-                      <label for="stopsNote">Note sui fermi (opzionale)</label>
-                      <textarea id="stopsNote" rows="3" placeholder="Esempio: guasto macchina, attesa materiali..."></textarea>
+                    <div class="field field-span-3 friendly-field">
+                      <label for="stopsNote">Note sui fermi</label>
+                      <textarea id="stopsNote" rows="3" placeholder="Esempio: guasto macchina, attesa materiali, riunione..."></textarea>
                     </div>
                   </div>
                 </div>
 
-                <div class="setup-summary-highlight">
-                  <div class="summary-block">
-                    <span class="label">Ore lavorabili</span>
-                    <span class="value" id="summaryWork">--</span>
+                <div class="setup-block setup-block-summary">
+                  <div class="setup-block-head">
+                    <div class="setup-block-number">3</div>
+                    <div>
+                      <h4>Controllo finale</h4>
+                      <p>Verifica i valori calcolati prima di passare all'inserimento degli operatori.</p>
+                    </div>
                   </div>
-                  <div class="summary-block">
-                    <span class="label">Tempo produttivo netto</span>
-                    <span class="value" id="summaryNet">--</span>
+                  <div class="setup-summary-highlight setup-summary-friendly">
+                    <div class="summary-block">
+                      <span class="label">Ore lavorabili</span>
+                      <span class="value" id="summaryWork">--</span>
+                    </div>
+                    <div class="summary-block">
+                      <span class="label">Tempo produttivo netto</span>
+                      <span class="value" id="summaryNet">--</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -313,22 +322,25 @@
             <div class="planned-title-block">
               <span class="step-badge">Modulo separato</span>
               <h2>Assenze programmate</h2>
-              <p>Qui registri ferie, permessi, corsi, malattie e altre assenze previste. Questa sezione serve solo come archivio e calendario: non modifica in automatico l'inserimento presenze.</p>
+              <p>Qui registri ferie, permessi, corsi, malattie e altre assenze previste. Questa sezione serve come archivio, calendario e riepilogo FTE per linea: non modifica in automatico l'inserimento presenze.</p>
             </div>
             <div class="planned-header-actions"><button id="refreshPlannedAbsencesBtn" class="btn btn-secondary" type="button">Aggiorna dati</button></div>
           </div>
           <div id="plannedAbsencesMessage" class="message hidden" role="alert" aria-live="polite"></div>
           <div class="planned-flow">
             <section class="card planned-section planned-section-form">
-              <div class="planned-section-head"><div class="planned-section-number">1</div><div><h3 id="plannedAbsenceFormTitle">Inserisci una nuova assenza</h3><p>Compila questi campi quando sai già che una persona sarà assente in una certa data.</p></div></div>
+              <div class="planned-section-head"><div class="planned-section-number">1</div><div><h3 id="plannedAbsenceFormTitle">Inserisci una nuova assenza</h3><p>Compila questi campi per una singola giornata oppure per un periodo lungo da una data a un'altra.</p></div></div>
               <input id="plannedAbsenceId" type="hidden">
-              <div class="planned-helper info-soft"><strong>Nota:</strong> salvare un'assenza qui non cambia le presenze giornaliere. Serve solo per avere uno storico ordinato e consultabile.</div>
+              <div class="planned-helper info-soft"><strong>Nota:</strong> se indichi un periodo da X a Y, l'app registra automaticamente una riga per ogni giorno del periodo. Le presenze giornaliere non vengono modificate. Il valore FTE viene calcolato usando le ore standard e il campo FTE programmabili dell'operatore.</div>
               <div class="form-grid form-grid-3 planned-form-grid">
-                <div class="field"><label for="plannedAbsenceDate">Data assenza</label><input id="plannedAbsenceDate" type="date"></div>
+                <div class="field"><label for="plannedAbsenceDate">Dal giorno</label><input id="plannedAbsenceDate" type="date"></div>
+                <div class="field"><label for="plannedAbsenceEndDate">Al giorno</label><input id="plannedAbsenceEndDate" type="date"></div>
                 <div class="field"><label for="plannedAbsenceOperator">Operatore</label><input id="plannedAbsenceOperator" list="plannedAbsenceOperatorsList" type="text" placeholder="Cerca operatore"><datalist id="plannedAbsenceOperatorsList"></datalist></div>
-                <div class="field"><label for="plannedAbsenceHours">Ore assenza</label><input id="plannedAbsenceHours" type="number" min="0" step="0.25" value="8"></div>
+                <div class="field"><label for="plannedAbsenceHours">Ore assenza al giorno</label><input id="plannedAbsenceHours" type="number" min="0" step="0.25" value="8"></div>
+                <div class="field"><label for="plannedAbsenceStandardHours">Ore standard assenze programmate</label><input id="plannedAbsenceStandardHours" type="number" min="0" step="0.25" value="8"></div>
+                <div class="field"><label for="plannedAbsenceFte">FTE assenza programmabili</label><input id="plannedAbsenceFte" type="number" min="0" step="0.01" value="1" readonly></div>
                 <div class="field"><label for="plannedAbsenceReason">Motivo</label><select id="plannedAbsenceReason"><option value="FERIE">FERIE</option><option value="PERMESSO">PERMESSO</option><option value="MALATTIA">MALATTIA</option><option value="VISITA MEDICA">VISITA MEDICA</option><option value="104">104</option><option value="ASPETTATIVA">ASPETTATIVA</option><option value="CORSO">CORSO</option><option value="TRASFERTA">TRASFERTA</option><option value="SCIOPERO">SCIOPERO</option><option value="ALTRO">ALTRO</option></select></div>
-                <div class="field field-span-3"><label for="plannedAbsenceNotes">Note opzionali</label><textarea id="plannedAbsenceNotes" rows="3" placeholder="Esempio: ferie concordate, corso interno, permesso breve..."></textarea></div>
+                <div class="field field-span-3"><label for="plannedAbsenceNotes">Note opzionali</label><textarea id="plannedAbsenceNotes" rows="3" placeholder="Esempio: ferie dal 12 al 20 agosto, corso interno, permesso breve..."></textarea></div>
               </div>
               <div class="actions toolbar planned-save-actions"><button id="savePlannedAbsenceBtn" class="btn btn-primary" type="button">Salva assenza</button><button id="cancelPlannedAbsenceEditBtn" class="btn btn-secondary hidden" type="button">Annulla modifica</button></div>
             </section>
@@ -350,7 +362,7 @@
             </section>
             <section class="card planned-section planned-section-archive">
               <div class="planned-section-head"><div class="planned-section-number">4</div><div><h3>Archivio assenze</h3><p>Qui trovi tutte le registrazioni visibili per il tuo profilo. Puoi modificare o cancellare le righe autorizzate.</p></div></div>
-              <div class="table-wrap planned-archive-wrap"><table class="attendance-table planned-absences-table"><thead><tr><th>Data</th><th>Operatore</th><th>Linea</th><th>Ore</th><th>Motivo</th><th>Note</th><th>Inserita da</th><th>Azioni</th></tr></thead><tbody id="plannedAbsencesBody"></tbody></table></div>
+              <div class="table-wrap planned-archive-wrap"><table class="attendance-table planned-absences-table"><thead><tr><th>Data</th><th>Operatore</th><th>Linea</th><th>Ore assenza</th><th>Ore std</th><th>FTE</th><th>Motivo</th><th>Note</th><th>Inserita da</th><th>Azioni</th></tr></thead><tbody id="plannedAbsencesBody"></tbody></table></div>
             </section>
           </div>
         </section>

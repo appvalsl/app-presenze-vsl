@@ -28,6 +28,7 @@
         <button id="menuToggle" class="hamburger" type="button" aria-label="Apri menu">☰</button>
         <div id="topbarMenu" class="topbar-menu">
           <button id="openAttendanceBtn" class="btn btn-secondary hidden" type="button">Presenze</button>
+          <button id="openPlannedAbsencesBtn" class="btn btn-secondary hidden" type="button">Assenze programmate</button>
           <button id="openOperatorsBtn" class="btn btn-secondary hidden" type="button">Gestione applicazione</button>
           <button id="openAttendanceAdminBtn" class="btn btn-secondary hidden" type="button">Riepilogo presenze</button>
           <span id="userBadge" class="user-badge hidden"></span>
@@ -288,6 +289,55 @@
         </section>
 
         
+
+        <section id="plannedAbsencesView" class="view hidden">
+          <div class="card planned-absences-card">
+            <div class="rows-top">
+              <div>
+                <h2>Assenze programmate</h2>
+                <p>Archivio separato per inserire e consultare le assenze previste. Non modifica e non influenza l'inserimento presenze.</p>
+              </div>
+              <div class="rows-top-right">
+                <button id="refreshPlannedAbsencesBtn" class="btn btn-secondary" type="button">Aggiorna</button>
+              </div>
+            </div>
+            <div id="plannedAbsencesMessage" class="message hidden" role="alert" aria-live="polite"></div>
+            <div class="planned-layout">
+              <div class="card inline-card planned-form-card">
+                <div class="card-header compact-header">
+                  <h3 id="plannedAbsenceFormTitle">Nuova assenza</h3>
+                  <p>Inserisci data, operatore, ore e motivo. Il salvataggio resta separato dalle presenze giornaliere.</p>
+                </div>
+                <input id="plannedAbsenceId" type="hidden">
+                <div class="form-grid form-grid-3">
+                  <div class="field"><label for="plannedAbsenceDate">Data assenza</label><input id="plannedAbsenceDate" type="date"></div>
+                  <div class="field"><label for="plannedAbsenceOperator">Operatore</label><input id="plannedAbsenceOperator" list="plannedAbsenceOperatorsList" type="text" placeholder="Cerca operatore" autocomplete="off"><datalist id="plannedAbsenceOperatorsList"></datalist></div>
+                  <div class="field"><label for="plannedAbsenceHours">Ore assenza</label><input id="plannedAbsenceHours" type="number" min="0" step="0.25" inputmode="decimal" value="8"></div>
+                  <div class="field"><label for="plannedAbsenceReason">Motivo</label><select id="plannedAbsenceReason"><option value="FERIE">FERIE</option><option value="PERMESSO">PERMESSO</option><option value="MALATTIA">MALATTIA</option><option value="VISITA MEDICA">VISITA MEDICA</option><option value="104">104</option><option value="ASPETTATIVA">ASPETTATIVA</option><option value="CORSO">CORSO</option><option value="TRASFERTA">TRASFERTA</option><option value="SCIOPERO">SCIOPERO</option><option value="ALTRO">ALTRO</option></select></div>
+                  <div class="field field-span-3"><label for="plannedAbsenceNotes">Note</label><textarea id="plannedAbsenceNotes" rows="3" placeholder="Note opzionali"></textarea></div>
+                </div>
+                <div class="actions toolbar"><button id="savePlannedAbsenceBtn" class="btn btn-primary" type="button">Salva assenza</button><button id="cancelPlannedAbsenceEditBtn" class="btn btn-secondary hidden" type="button">Annulla modifica</button></div>
+              </div>
+              <div class="card inline-card planned-calendar-card">
+                <div class="card-header compact-header"><h3>Vista calendario</h3><p>Gli admin vedono tutto; gli utenti vedono solo le assenze inserite da loro.</p></div>
+                <div class="form-grid single-col"><div class="field"><label for="plannedAbsenceMonth">Mese</label><input id="plannedAbsenceMonth" type="month"></div></div>
+                <div id="plannedAbsenceCalendar" class="planned-calendar"></div>
+              </div>
+            </div>
+            <div id="plannedAbsenceStats" class="summary-box compact planned-stats"></div>
+            <div class="card inline-card">
+              <div class="form-grid form-grid-3">
+                <div class="field"><label for="plannedAbsenceFromFilter">Dal</label><input id="plannedAbsenceFromFilter" type="date"></div>
+                <div class="field"><label for="plannedAbsenceToFilter">Al</label><input id="plannedAbsenceToFilter" type="date"></div>
+                <div class="field"><label for="plannedAbsenceReasonFilter">Motivo</label><select id="plannedAbsenceReasonFilter"><option value="">Tutti i motivi</option><option value="FERIE">FERIE</option><option value="PERMESSO">PERMESSO</option><option value="MALATTIA">MALATTIA</option><option value="VISITA MEDICA">VISITA MEDICA</option><option value="104">104</option><option value="ASPETTATIVA">ASPETTATIVA</option><option value="CORSO">CORSO</option><option value="TRASFERTA">TRASFERTA</option><option value="SCIOPERO">SCIOPERO</option><option value="ALTRO">ALTRO</option></select></div>
+                <div class="field"><label for="plannedAbsenceLineFilter">Linea</label><select id="plannedAbsenceLineFilter"><option value="">Tutte le linee</option></select></div>
+                <div class="field field-span-3"><label for="plannedAbsenceSearch">Cerca</label><input id="plannedAbsenceSearch" type="text" placeholder="Operatore, motivo, linea, note"></div>
+              </div>
+            </div>
+            <h3 class="admin-subtitle">Archivio assenze</h3>
+            <div class="table-wrap"><table class="attendance-table planned-absences-table"><thead><tr><th>Data</th><th>Operatore</th><th>Linea</th><th>Ore</th><th>Motivo</th><th>Note</th><th>Inserita da</th><th>Azioni</th></tr></thead><tbody id="plannedAbsencesBody"></tbody></table></div>
+          </div>
+        </section>
         <section id="attendanceAdminView" class="view hidden">
           <div class="card">
             <div class="rows-top">

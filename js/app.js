@@ -4133,7 +4133,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const h=num($("plannedAbsenceHours")?.value,0);
     const s=num($("plannedAbsenceStandardHours")?.value,0);
     const op=findOp($("plannedAbsenceOperator")?.value || "");
-    const fteBase=op ? num(op.fteProgrammabili, s>0 ? s/8 : 1) : (s>0 ? s/8 : 1);
+    const fteBase=op ? num(op.fteProgrammabili, 1) : (1);
     const fte=calcFte(h,s,fteBase);
     if($("plannedAbsenceFte")) $("plannedAbsenceFte").value = Number.isFinite(fte) ? fte.toFixed(2) : "0.00";
   }
@@ -4146,7 +4146,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const line=getFirst(row,["lineaproduzione","lineaProduzione","linea_produzione","linea","line"],"");
     const idOp=getFirst(row,["idoperatore","idOperatore","id_operatore"],"");
     const standardHours=num(getFirst(row,["ore_standard_assenze_programmate","orestandardassenzeprogrammate","ore_standard","orestandard","oreStandard","ore_std","oreStd","ore_giornaliere","oregiornaliere"],8),8);
-    const fteProg=num(getFirst(row,["fte_programmabili","fteprogrammabili","FTE PROGRAMMABILI","fteProgrammabili"], standardHours>0 ? standardHours/8 : 1), standardHours>0 ? standardHours/8 : 1);
+    const fteProg=num(getFirst(row,["fte_programmabili","fteprogrammabili","FTE PROGRAMMABILI","fteProgrammabili"], 1), 1);
     return { id, name, line:String(line||"").trim(), idOperatore:String(idOp||"").trim(), standardHours, fteProgrammabili:fteProg, label:name+(idOp?" | ID: "+idOp:"")+(line?" | Linea: "+line:"") };
   }
   async function loadOperators(){ const r=await client.from("operators").select("*").order("cognome",{ascending:true}); state.operators=r.error?[]:(r.data||[]).map(mapOperator); datalist(); lines(); }
@@ -4161,7 +4161,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   function read(){
     const raw=($("plannedAbsenceOperator")?.value||"").trim(); const op=findOp(raw); const start=$("plannedAbsenceDate")?.value||""; const end=($("plannedAbsenceEndDate")?.value||start||"");
-    const hours=num($("plannedAbsenceHours")?.value,0); const standardHours=num($("plannedAbsenceStandardHours")?.value,0); const fteBase=op ? num(op.fteProgrammabili, standardHours>0 ? standardHours/8 : 1) : (standardHours>0 ? standardHours/8 : 1); const fteAbs=calcFte(hours,standardHours,fteBase);
+    const hours=num($("plannedAbsenceHours")?.value,0); const standardHours=num($("plannedAbsenceStandardHours")?.value,0); const fteBase=op ? num(op.fteProgrammabili, 1) : (1); const fteAbs=calcFte(hours,standardHours,fteBase);
     const reason=$("plannedAbsenceReason")?.value||"ALTRO"; const notes=($("plannedAbsenceNotes")?.value||"").trim();
     if(!start) return {ok:false,msg:"Inserisci la data di inizio assenza."}; if(!end) return {ok:false,msg:"Inserisci la data di fine assenza."}; if(end < start) return {ok:false,msg:"La data finale non può essere precedente alla data iniziale."}; if(!raw) return {ok:false,msg:"Inserisci l'operatore."}; if(!Number.isFinite(hours)||hours<=0) return {ok:false,msg:"Inserisci ore assenza maggiori di zero."}; if(!Number.isFinite(standardHours)||standardHours<=0) return {ok:false,msg:"Inserisci ore standard assenze programmate maggiori di zero."};
     const dates=eachDate(start,end); if(!dates.length) return {ok:false,msg:"Periodo non valido."}; if(dates.length>366) return {ok:false,msg:"Periodo troppo lungo: massimo 366 giorni."};
@@ -4175,10 +4175,57 @@ document.addEventListener("DOMContentLoaded", () => {
   async function clickTable(e){ const b=e.target.closest("button[data-action]"); if(!b) return; const row=state.absences.find(x=>String(x.id)===String(b.dataset.id)); if(!row) return; if(!canEdit(row)){ show($("plannedAbsencesMessage"),"Non sei autorizzato.","error"); return; } if(b.dataset.action==="edit"){ fill(row); return; } if(confirm("Eliminare questa assenza?")){ const r=await client.from("planned_absences").delete().eq("id",row.id); if(r.error) show($("plannedAbsencesMessage"),r.error.message,"error"); else { await loadAbsences(); render(); show($("plannedAbsencesMessage"),"Assenza eliminata correttamente.","success"); } } }
   function stats(){ const box=$("plannedAbsenceStats"); if(!box) return; const h=state.filtered.reduce((a,r)=>a+(num(r.hours,0)),0); const fte=state.filtered.reduce((a,r)=>a+num(r.fte_absence_programmabili,0),0); const people=new Set(state.filtered.map(r=>r.operator_name).filter(Boolean)); box.innerHTML=`<div class="summary-item"><span class="label">Giornate filtrate</span><span class="value">${state.filtered.length}</span></div><div class="summary-item"><span class="label">Ore assenza</span><span class="value">${h.toFixed(2)}</span></div><div class="summary-item"><span class="label">FTE assenti</span><span class="value">${fte.toFixed(2)}</span></div><div class="summary-item"><span class="label">Operatori coinvolti</span><span class="value">${people.size}</span></div>`; }
   function table(){ const body=$("plannedAbsencesBody"); if(!body) return; if(!state.filtered.length){ body.innerHTML='<tr><td colspan="10"><div class="muted">Nessuna assenza trovata.</div></td></tr>'; return; } body.innerHTML=state.filtered.map(r=>`<tr><td data-label="Data">${esc(formatDateIT(r.absence_date))}</td><td data-label="Operatore"><strong>${esc(r.operator_name||"-")}</strong></td><td data-label="Linea">${esc(r.line_name||"-")}</td><td data-label="Ore assenza">${esc(num(r.hours,0).toFixed(2))}</td><td data-label="Ore std">${esc(num(r.standard_absence_hours,0).toFixed(2))}</td><td data-label="FTE">${esc(num(r.fte_absence_programmabili,0).toFixed(2))}</td><td data-label="Motivo"><span class="planned-reason-badge reason-${esc(r.reason||"ALTRO")}">${esc(r.reason||"ALTRO")}</span></td><td data-label="Note">${esc(r.notes||"-")}</td><td data-label="Inserita da"><span class="planned-owner-badge">${esc(r.created_by_email||"-")}</span></td><td data-label="Azioni"><div class="planned-actions">${canEdit(r)?`<button class="btn btn-secondary btn-small" data-action="edit" data-id="${esc(r.id)}">Modifica</button><button class="btn btn-danger btn-small" data-action="delete" data-id="${esc(r.id)}">Elimina</button>`:'<span class="muted">Solo lettura</span>'}</div></td></tr>`).join(""); }
-  function lineSummaryHtml(items){ const byLine=new Map(); items.forEach(i=>{ const line=i.line_name || "Senza linea"; if(!byLine.has(line)) byLine.set(line,{count:0,hours:0,fte:0}); const g=byLine.get(line); g.count+=1; g.hours+=num(i.hours,0); g.fte+=num(i.fte_absence_programmabili,0); }); return `<div class="planned-line-summary">${[...byLine.entries()].sort((a,b)=>a[0].localeCompare(b[0],"it")).map(([line,g])=>`<div class="planned-line-pill"><strong>${esc(line)}</strong><span>${g.count} ass. · ${g.hours.toFixed(1)}h · ${g.fte.toFixed(2)} FTE</span></div>`).join("")}</div>`; }
+  function lineSummaryHtml(items){
+    const byLine=new Map();
+    items.forEach(i=>{
+      const line=i.line_name || "Senza linea";
+      if(!byLine.has(line)) byLine.set(line,{count:0,hours:0,fteAbs:0});
+      const g=byLine.get(line);
+      g.count+=1;
+      g.hours+=num(i.hours,0);
+      g.fteAbs+=num(i.fte_absence_programmabili,0);
+    });
+    return `<div class="planned-line-summary">${[...byLine.entries()].sort((a,b)=>a[0].localeCompare(b[0],"it")).map(([line,g])=>{
+      const operatorsOfLine=state.operators.filter(op=>(op.line || "Senza linea")===line);
+      const fteTot=operatorsOfLine.reduce((sum,op)=>sum+num(op.fteProgrammabili,1),0);
+      const fteReal=Math.max(0, fteTot-g.fteAbs);
+      return `<div class="planned-line-pill planned-line-pill-rich">
+        <strong>${esc(line)}</strong>
+        <span>${g.count} ass. · ${g.hours.toFixed(1)}h · ${g.fteAbs.toFixed(2)} FTE assenti</span>
+        <span>FTE programmabili: ${fteTot.toFixed(2)}</span>
+        <span>FTE reali programmabili: ${fteReal.toFixed(2)}</span>
+      </div>`;
+    }).join("")}</div>`;
+  }
   function calendar(){ const box=$("plannedAbsenceCalendar"); if(!box) return; const m=$("plannedAbsenceMonth")?.value||currentMonth(); const rows=state.absences.filter(a=>String(a.absence_date||"").startsWith(m)); if(!rows.length){ box.innerHTML='<div class="planned-empty">Nessuna assenza nel mese selezionato.</div>'; return; } const g=new Map(); rows.forEach(r=>{ const d=r.absence_date||"Senza data"; if(!g.has(d)) g.set(d,[]); g.get(d).push(r); }); box.innerHTML=[...g.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([d,items])=>`<div class="planned-day"><div class="planned-day-head"><span>${esc(formatDateIT(d))}</span><span class="planned-day-count">${items.length}</span></div>${lineSummaryHtml(items)}<ul class="planned-day-list">${items.map(i=>`<li class="planned-day-item"><span><strong>${esc(i.operator_name||"-")}</strong><small>${esc(i.line_name||"Senza linea")}</small></span><span>${esc(i.reason||"ALTRO")} · ${esc(num(i.hours,0).toFixed(2))}h · ${esc(num(i.fte_absence_programmabili,0).toFixed(2))} FTE</span></li>`).join("")}</ul></div>`).join(""); }
   function render(){ lines(); filters(); stats(); table(); calendar(); }
   async function open(){ await profile(); reveal(); if(!state.user){ show($("globalMessage"),"Effettua il login.","error"); return; } view(); if(!$("plannedAbsenceDate").value) $("plannedAbsenceDate").value=todayIso(); if($("plannedAbsenceEndDate")&&!$("plannedAbsenceEndDate").value) $("plannedAbsenceEndDate").value=$("plannedAbsenceDate").value||todayIso(); if(!$("plannedAbsenceMonth").value) $("plannedAbsenceMonth").value=currentMonth(); await loadOperators(); await loadAbsences(); render(); updateFtePreview(); }
   function bind(){ const top=$("openPlannedAbsencesBtn"); if(top&&!top.dataset.boundAbs){ top.dataset.boundAbs="1"; top.addEventListener("click",open); } const home=$("homeOpenPlannedAbsencesBtn"); if(home&&!home.dataset.boundAbs){ home.dataset.boundAbs="1"; home.addEventListener("click",open); } const saveBtn=$("savePlannedAbsenceBtn"); if(saveBtn&&!saveBtn.dataset.boundAbs){ saveBtn.dataset.boundAbs="1"; saveBtn.addEventListener("click",save); } const cancel=$("cancelPlannedAbsenceEditBtn"); if(cancel&&!cancel.dataset.boundAbs){ cancel.dataset.boundAbs="1"; cancel.addEventListener("click",reset); } const refresh=$("refreshPlannedAbsencesBtn"); if(refresh&&!refresh.dataset.boundAbs){ refresh.dataset.boundAbs="1"; refresh.addEventListener("click",async()=>{ await loadAbsences(); render(); show($("plannedAbsencesMessage"),"Dati aggiornati.","success"); }); } const start=$('plannedAbsenceDate'); const end=$('plannedAbsenceEndDate'); if(start&&end&&!start.dataset.boundRange){ start.dataset.boundRange="1"; start.addEventListener("change",()=>{ if(!end.value || end.value<start.value) end.value=start.value; }); } ["plannedAbsenceOperator","plannedAbsenceHours","plannedAbsenceStandardHours"].forEach(id=>{ const el=$(id); if(el&&!el.dataset.boundFte){ el.dataset.boundFte="1"; el.addEventListener(id==="plannedAbsenceOperator"?"change":"input", id==="plannedAbsenceOperator"?syncOperatorDefaults:updateFtePreview); } }); ["plannedAbsenceFromFilter","plannedAbsenceToFilter","plannedAbsenceReasonFilter","plannedAbsenceLineFilter","plannedAbsenceSearch","plannedAbsenceMonth"].forEach(id=>{ const el=$(id); if(el&&!el.dataset.boundAbs){ el.dataset.boundAbs="1"; el.addEventListener(el.tagName==="SELECT"||el.type==="date"||el.type==="month"?"change":"input",render); } }); const body=$("plannedAbsencesBody"); if(body&&!body.dataset.boundAbs){ body.dataset.boundAbs="1"; body.addEventListener("click",clickTable); } }
   document.addEventListener("DOMContentLoaded", function(){ setTimeout(async()=>{ bind(); await profile(); reveal(); }, 1000); });
+})();
+
+
+/* ===== ROBUST FTE LIVE UPDATE ===== */
+(function(){
+  function n(v){ const x=Number(String(v||"0").replace(",",".")); return Number.isFinite(x)?x:0; }
+  function update(){
+    const h=document.getElementById("plannedAbsenceHours");
+    const s=document.getElementById("plannedAbsenceStandardHours");
+    const out=document.getElementById("plannedAbsenceFte");
+    if(!h || !s || !out) return;
+    const hours=n(h.value);
+    const std=n(s.value);
+    let fteBase=1;
+    // If the selected option has FTE programmabili stored in the HTML label cannot be read reliably here;
+    // the core module writes the correct operator-based value during save. This live preview uses the visible fields.
+    const fte = std > 0 ? (hours / std) * fteBase : 0;
+    out.value = Number.isFinite(fte) ? fte.toFixed(2) : "0.00";
+  }
+  document.addEventListener("input", function(e){
+    if(e.target && (e.target.id === "plannedAbsenceHours" || e.target.id === "plannedAbsenceStandardHours")) update();
+  });
+  document.addEventListener("change", function(e){
+    if(e.target && (e.target.id === "plannedAbsenceHours" || e.target.id === "plannedAbsenceStandardHours" || e.target.id === "plannedAbsenceOperator")) setTimeout(update, 0);
+  });
+  document.addEventListener("DOMContentLoaded", function(){ setTimeout(update, 1200); });
 })();

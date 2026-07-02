@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Inserimento Presenze</title>
 
-  <link rel="stylesheet" href="/assets/styles.css">
+  <link rel="stylesheet" href="./assets/styles.css">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./js/config.js"></script>
@@ -322,13 +322,28 @@
             <div class="planned-title-block">
               <span class="step-badge">Modulo separato</span>
               <h2>Assenze programmate</h2>
-              <p>Qui registri ferie, permessi, corsi, malattie e altre assenze previste. Questa sezione serve come archivio, calendario e riepilogo FTE per linea: non modifica in automatico l'inserimento presenze.</p>
+              <p>Qui registri ferie, permessi, corsi, malattie e altre assenze previste. La sezione resta separata dall'inserimento presenze: non modifica in automatico le persone già assenti durante il caricamento giornaliero.</p>
             </div>
             <div class="planned-header-actions"><button id="refreshPlannedAbsencesBtn" class="btn btn-secondary" type="button">Aggiorna dati</button></div>
           </div>
+
           <div id="plannedAbsencesMessage" class="message hidden" role="alert" aria-live="polite"></div>
+
+          <div class="planned-choice-grid">
+            <button id="plannedOpenAddBtn" class="planned-choice-card planned-choice-primary" type="button">
+              <span class="planned-choice-icon">+</span>
+              <span class="planned-choice-title">Aggiungi assenze programmate</span>
+              <span class="planned-choice-text">Apri il modulo per inserire una singola giornata oppure un periodo da una data a un'altra.</span>
+            </button>
+            <button id="plannedOpenCalendarBtn" class="planned-choice-card" type="button">
+              <span class="planned-choice-icon">CAL</span>
+              <span class="planned-choice-title">Vedi riepiloghi e calendario</span>
+              <span class="planned-choice-text">Consulta il mese, i riepiloghi FTE per linea, l'archivio filtrabile ed elimina direttamente dal calendario.</span>
+            </button>
+          </div>
+
           <div class="planned-flow">
-            <section class="card planned-section planned-section-form">
+            <section id="plannedAddPanel" class="card planned-section planned-section-form hidden">
               <div class="planned-section-head"><div class="planned-section-number">1</div><div><h3 id="plannedAbsenceFormTitle">Inserisci una nuova assenza</h3><p>Compila questi campi per una singola giornata oppure per un periodo lungo da una data a un'altra.</p></div></div>
               <input id="plannedAbsenceId" type="hidden">
               <div class="planned-helper info-soft"><strong>Nota:</strong> se indichi un periodo da X a Y, l'app registra automaticamente una riga per ogni giorno del periodo. Le presenze giornaliere non vengono modificate. Il valore FTE viene calcolato usando le ore standard e il campo FTE programmabili dell'operatore.</div>
@@ -342,28 +357,33 @@
                 <div class="field"><label for="plannedAbsenceReason">Motivo</label><select id="plannedAbsenceReason"><option value="FERIE">FERIE</option><option value="PERMESSO">PERMESSO</option><option value="MALATTIA">MALATTIA</option><option value="VISITA MEDICA">VISITA MEDICA</option><option value="104">104</option><option value="ASPETTATIVA">ASPETTATIVA</option><option value="CORSO">CORSO</option><option value="TRASFERTA">TRASFERTA</option><option value="SCIOPERO">SCIOPERO</option><option value="ALTRO">ALTRO</option></select></div>
                 <div class="field field-span-3"><label for="plannedAbsenceNotes">Note opzionali</label><textarea id="plannedAbsenceNotes" rows="3" placeholder="Esempio: ferie dal 12 al 20 agosto, corso interno, permesso breve..."></textarea></div>
               </div>
-              <div class="actions toolbar planned-save-actions"><button id="savePlannedAbsenceBtn" class="btn btn-primary" type="button">Salva assenza</button><button id="cancelPlannedAbsenceEditBtn" class="btn btn-secondary hidden" type="button">Annulla modifica</button></div>
+              <div class="actions toolbar planned-save-actions"><button id="savePlannedAbsenceBtn" class="btn btn-primary" type="button">Salva assenza</button><button id="cancelPlannedAbsenceEditBtn" class="btn btn-secondary hidden" type="button">Annulla modifica</button><button id="plannedBackToDashboardBtn" class="btn btn-secondary" type="button">Torna ai riepiloghi</button></div>
             </section>
-            <section class="card planned-section planned-section-calendar">
-              <div class="planned-section-head"><div class="planned-section-number">2</div><div><h3>Calendario del mese</h3><p>Controlla assenze, FTE programmabili, FTE assenti e FTE reali programmabili per ogni linea.</p></div></div>
-              <div class="form-grid single-col planned-calendar-filter"><div class="field"><label for="plannedAbsenceMonth">Mese da visualizzare</label><input id="plannedAbsenceMonth" type="month"></div></div>
-              <div id="plannedAbsenceCalendar" class="planned-calendar"></div>
-            </section>
-            <section class="card planned-section planned-section-summary">
-              <div class="planned-section-head"><div class="planned-section-number">3</div><div><h3>Riepilogo e filtri</h3><p>Usa questi campi per restringere l'elenco e trovare velocemente una registrazione.</p></div></div>
-              <div id="plannedAbsenceStats" class="summary-box compact planned-stats"></div>
-              <div class="planned-filter-box"><div class="form-grid form-grid-3">
-                <div class="field"><label for="plannedAbsenceFromFilter">Dal</label><input id="plannedAbsenceFromFilter" type="date"></div>
-                <div class="field"><label for="plannedAbsenceToFilter">Al</label><input id="plannedAbsenceToFilter" type="date"></div>
-                <div class="field"><label for="plannedAbsenceReasonFilter">Motivo</label><select id="plannedAbsenceReasonFilter"><option value="">Tutti i motivi</option><option value="FERIE">FERIE</option><option value="PERMESSO">PERMESSO</option><option value="MALATTIA">MALATTIA</option><option value="VISITA MEDICA">VISITA MEDICA</option><option value="104">104</option><option value="ASPETTATIVA">ASPETTATIVA</option><option value="CORSO">CORSO</option><option value="TRASFERTA">TRASFERTA</option><option value="SCIOPERO">SCIOPERO</option><option value="ALTRO">ALTRO</option></select></div>
-                <div class="field"><label for="plannedAbsenceLineFilter">Linea</label><select id="plannedAbsenceLineFilter"><option value="">Tutte le linee</option></select></div>
-                <div class="field field-span-3"><label for="plannedAbsenceSearch">Cerca nell'archivio</label><input id="plannedAbsenceSearch" type="text" placeholder="Scrivi nome operatore, motivo, linea o nota"></div>
-              </div></div>
-            </section>
-            <section class="card planned-section planned-section-archive">
-              <div class="planned-section-head"><div class="planned-section-number">4</div><div><h3>Archivio assenze</h3><p>Qui trovi tutte le registrazioni visibili per il tuo profilo. Puoi modificare o cancellare le righe autorizzate.</p></div></div>
-              <div class="table-wrap planned-archive-wrap"><table class="attendance-table planned-absences-table"><thead><tr><th>Data</th><th>Operatore</th><th>Linea</th><th>Ore assenza</th><th>Ore std</th><th>FTE</th><th>Motivo</th><th>Note</th><th>Inserita da</th><th>Azioni</th></tr></thead><tbody id="plannedAbsencesBody"></tbody></table></div>
-            </section>
+
+            <div id="plannedDashboardPanel" class="planned-dashboard-panel">
+              <section class="card planned-section planned-section-calendar">
+                <div class="planned-section-head"><div class="planned-section-number">2</div><div><h3>Calendario del mese</h3><p>Controlla assenze, FTE programmabili, FTE assenti e FTE reali programmabili per ogni linea. Puoi eliminare una registrazione direttamente dal giorno del calendario.</p></div></div>
+                <div class="form-grid single-col planned-calendar-filter"><div class="field"><label for="plannedAbsenceMonth">Mese da visualizzare</label><input id="plannedAbsenceMonth" type="month"></div></div>
+                <div id="plannedAbsenceCalendar" class="planned-calendar"></div>
+              </section>
+
+              <section class="card planned-section planned-section-summary">
+                <div class="planned-section-head"><div class="planned-section-number">3</div><div><h3>Riepilogo e filtri</h3><p>Usa questi campi per restringere l'elenco e trovare velocemente una registrazione.</p></div></div>
+                <div id="plannedAbsenceStats" class="summary-box compact planned-stats"></div>
+                <div class="planned-filter-box"><div class="form-grid form-grid-3">
+                  <div class="field"><label for="plannedAbsenceFromFilter">Dal</label><input id="plannedAbsenceFromFilter" type="date"></div>
+                  <div class="field"><label for="plannedAbsenceToFilter">Al</label><input id="plannedAbsenceToFilter" type="date"></div>
+                  <div class="field"><label for="plannedAbsenceReasonFilter">Motivo</label><select id="plannedAbsenceReasonFilter"><option value="">Tutti i motivi</option><option value="FERIE">FERIE</option><option value="PERMESSO">PERMESSO</option><option value="MALATTIA">MALATTIA</option><option value="VISITA MEDICA">VISITA MEDICA</option><option value="104">104</option><option value="ASPETTATIVA">ASPETTATIVA</option><option value="CORSO">CORSO</option><option value="TRASFERTA">TRASFERTA</option><option value="SCIOPERO">SCIOPERO</option><option value="ALTRO">ALTRO</option></select></div>
+                  <div class="field"><label for="plannedAbsenceLineFilter">Linea</label><select id="plannedAbsenceLineFilter"><option value="">Tutte le linee</option></select></div>
+                  <div class="field field-span-3"><label for="plannedAbsenceSearch">Cerca nell'archivio</label><input id="plannedAbsenceSearch" type="text" placeholder="Scrivi nome operatore, motivo, linea o nota"></div>
+                </div></div>
+              </section>
+
+              <section class="card planned-section planned-section-archive">
+                <div class="planned-section-head"><div class="planned-section-number">4</div><div><h3>Archivio assenze</h3><p>Qui trovi tutte le registrazioni visibili per il tuo profilo. Puoi modificare o cancellare le righe autorizzate.</p></div></div>
+                <div class="table-wrap planned-archive-wrap"><table class="attendance-table planned-absences-table"><thead><tr><th>Data</th><th>Operatore</th><th>Linea</th><th>Ore assenza</th><th>Ore std</th><th>FTE</th><th>Motivo</th><th>Note</th><th>Inserita da</th><th>Azioni</th></tr></thead><tbody id="plannedAbsencesBody"></tbody></table></div>
+              </section>
+            </div>
           </div>
         </section>
         <section id="attendanceAdminView" class="view hidden">

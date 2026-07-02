@@ -798,116 +798,81 @@ function handleResetRows() {
     closeAttendanceRowModal();
   }
 
+  async function ensureAppUserRecord(authUser) {
+    if (!client || !authUser || !authUser.id) return null;
+    const basePayload = {
+      user_id: authUser.id,
+      email: authUser.email || "",
+      role: "user",
+      can_manage_operators: false,
+      is_active: true
+    };
+    const payloadWithLines = {
+      ...basePayload,
+      allowed_lines: []
+    };
+    try {
+      let insertResponse = await client
+        .from("app_users")
+        .insert(payloadWithLines)
+        .select()
+        .maybeSingle();
+      if (insertResponse.error && String(insertResponse.error.message || "").toLowerCase().includes("allowed_lines")) {
+        insertResponse = await client
+          .from("app_users")
+          .insert(basePayload)
+          .select()
+          .maybeSingle();
+      }
+      if (insertResponse.error) {
+        throw insertResponse.error;
+      }
+      return insertResponse.data || basePayload;
+    } catch (error) {
+      console.warn("Creazione automatica app_users non riuscita:", error);
+      return basePayload;
+    }
+  }
   async function loadCurrentUserProfile() {
     if (!state.user || !state.user.id) {
       state.currentUserProfile = null;
       return;
     }
-
     try {
       const response = await client
         .from("app_users")
         .select("*")
         .eq("user_id", state.user.id)
         .maybeSingle();
-
       if (response.error) {
         console.warn("Errore lettura app_users:", response.error.message);
       }
-
       if (response.data) {
         state.currentUserProfile = response.data;
       } else {
-        state.currentUserProfile = {
-          user_id: state.user.id,
-          email: state.user.email || "",
-          role: "user",
-          can_manage_operators: false,
-          is_active: true
-        };
+        state.currentUserProfile = await ensureAppUserRecord(state.user);
       }
     } catch (error) {
       console.warn("Profilo app_users non disponibile:", error);
-
-      state.currentUserProfile = {
-        user_id: state.user.id,
-        email: state.user.email || "",
-        role: "user",
-        can_manage_operators: false,
-        is_active: true
-      };
-    }
-  }
-
-  function getProfileRole(profile) {
-    return normalizeText(profile && profile.role ? profile.role : "user");
-  }
-  function parseAllowedLines(value) {
-    if (Array.isArray(value)) return value.map((item) => String(item || "").trim()).filter(Boolean);
-    if (value === undefined || value === null || value === "") return [];
-    if (typeof value === "string") {
-      const raw = value.trim();
-      if (!raw) return [];
-      try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed.map((item) => String(item || "").trim()).filter(Boolean);
-      } catch (_) {}
-      return raw.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
-    }
-    return [];
-  }
-  function getCurrentUserAllowedLines() {
-    const profile = state.currentUserProfile || {};
-    return parseAllowedLines(profile.allowed_lines || profile.linee_autorizzate || profile.allowedLines || profile.linee || profile.linee_produzione);
-  }
-  function isAdminProfile(profile) {
-    const role = getProfileRole(profile);
-    return Boolean(profile && profile.is_active !== false && (role === "ADMIN" || role === "SUPERADMIN" || profile.can_manage_operators === true));
-  }
-  function isSuperUserProfile(profile) {
-    const role = getProfileRole(profile);
-    return Boolean(profile && profile.is_active !== false && (role === "SUPER_USER" || role === "SUPERUSER" || role === "SUPER UTENTE" || role === "KEY_USER"));
-  }
-  function isAdminUser() {
-    return isAdminProfile(state.currentUserProfile);
-  }
-  function isSuperUser() {
-    return isSuperUserProfile(state.currentUserProfile);
-  }
-  function canUseProductionLine(lineName) {
-    if (!lineName) return true;
-    if (isAdminUser() || isSuperUser()) return true;
-    const allowed = getCurrentUserAllowedLines();
-    if (!allowed.length) return true;
-    const wanted = normalizeText(lineName);
-    return allowed.some((line) => normalizeText(line) === wanted);
-  }
-  function restrictLineSelectOptions() {
-    if (!dom.lineSelect) return;
-    if (!dom.lineSelect.dataset.originalOptions) {
-      dom.lineSelect.dataset.originalOptions = Array.from(dom.lineSelect.options).map((option) => option.value + "|||" + option.textContent).join("[[OPT]]");
-    }
-    const saved = dom.lineSelect.dataset.originalOptions.split("[[OPT]]").map((item) => {
-      const parts = item.split("|||");
-      return { value: parts[0] || "", label: parts.slice(1).join("|||") || parts[0] || "" };
-    });
-    const current = dom.lineSelect.value || state.setup.lineName || "";
-    dom.lineSelect.innerHTML = saved
-      .filter((option, index) => index === 0 || !option.value || canUseProductionLine(option.value))
-      .map((option) => `<option value="${escapeAttribute(option.value)}">${escapeHtml(option.label)}</option>`)
-      .join("");
-    if (current && canUseProductionLine(current)) dom.lineSelect.value = current;
-    if (current && !canUseProductionLine(current)) {
-      dom.lineSelect.value = "";
-      state.setup.lineName = "";
+      state.currentUserProfile = await ensureAppUserRecord(state.user);
     }
   }
   function canManageOperators() {
-    return isAdminUser();
+    return Boolean(
+      state.currentUserProfile &&
+        state.currentUserProfile.is_active === true &&
+        state.currentUserProfile.can_manage_operators === true
+    );
   }
 
   function canManageAttendance() {
-    return isAdminUser() || isSuperUser();
+    return Boolean(
+      state.currentUserProfile &&
+        state.currentUserProfile.is_active === true &&
+        (state.currentUserProfile.can_manage_operators === true ||
+          normalizeText(state.currentUserProfile.role) === "ADMIN" ||
+          normalizeText(state.currentUserProfile.role) === "SUPERADMIN")
+    );
   }
   function showAuthenticatedUI() {
     if (dom.authSection) dom.authSection.classList.add("hidden");
@@ -1700,7 +1665,6 @@ function handleRowTableInteraction(event) {
   }
 
   function renderSetupForm() {
-    restrictLineSelectOptions();
     if (dom.lineSelect) dom.lineSelect.value = state.setup.lineName || "";
     if (dom.workDate) dom.workDate.value = state.setup.workDate || "";
     if (dom.startTime) dom.startTime.value = state.setup.startTime || "";
@@ -3700,7 +3664,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const session = await client.auth.getSession();
     state.user = session && session.data && session.data.session ? session.data.session.user : null;
     if (!state.user) return;
-    const res = await client.from("app_users").select("*").eq("user_id", state.user.id).maybeSingle();
+    const res = await client.from("app_users").select("user_id,email,role,can_manage_operators,is_active").eq("user_id", state.user.id).maybeSingle();
     state.profile = res.data || { user_id: state.user.id, email: state.user.email, role: "user", can_manage_operators:false, is_active:true };
   }
   function bind(){
@@ -3794,7 +3758,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadUsers(){
     const panel=$("usersQuickPanel"), body=$("usersQuickBody"); if(!panel||!body) return;
     panel.classList.remove("hidden");
-    const res=await client.from("app_users").select("*").order("email", {ascending:true});
+    const res=await client.from("app_users").select("user_id,email,role,can_manage_operators,is_active").order("email", {ascending:true});
     if(res.error){ body.innerHTML=`<tr><td colspan="5">${esc(res.error.message)}</td></tr>`; return; }
     const users=res.data||[];
     body.innerHTML=users.map(u=>`<tr><td>${esc(u.email||"-")}</td><td>${esc(u.role||"user")}</td><td>${u.can_manage_operators?"Sì":"No"}</td><td>${u.is_active?"Sì":"No"}</td><td><button class="btn btn-secondary btn-small" data-toggle-admin="${esc(u.user_id)}">${u.can_manage_operators?"Rendi user":"Rendi admin"}</button></td></tr>`).join("");
@@ -3922,7 +3886,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadUsersArea() {
     const box = $("applicationUsersPanel");
     if (!box || !client) return;
-    const res = await client.from("app_users").select("*").order("email", { ascending: true });
+    const res = await client.from("app_users").select("user_id,email,role,can_manage_operators,is_active").order("email", { ascending: true });
     if (res.error) { showMessage($("applicationAreaMessage"), res.error.message, "error"); return; }
     appState.users = res.data || [];
     renderUsersArea();
@@ -4169,14 +4133,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const esc = (v) => String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
   const todayIso = () => new Date().toISOString().slice(0,10);
   const currentMonth = () => new Date().toISOString().slice(0,7);
-  const state = { user:null, profile:null, isAdmin:false, isSuperUser:false, operators:[], absences:[], filtered:[] };
+  const state = { user:null, profile:null, isAdmin:false, operators:[], absences:[], filtered:[] };
   function show(el,msg,type){ if(!el) return; el.textContent=msg; el.className="message "+(type||"info"); el.classList.remove("hidden"); }
   function hide(el){ if(!el) return; el.textContent=""; el.className="message hidden"; }
   function admin(profile){ return !!(profile && profile.is_active !== false && (profile.can_manage_operators === true || norm(profile.role)==="ADMIN" || norm(profile.role)==="SUPERADMIN")); }
-  function superUser(profile){ const role=norm(profile && profile.role ? profile.role : ""); return !!(profile && profile.is_active !== false && (role==="SUPER_USER" || role==="SUPERUSER" || role==="SUPER UTENTE" || role==="KEY_USER")); }
-  function allowedLines(){ const p=state.profile || {}; const raw=p.allowed_lines || p.linee_autorizzate || p.allowedLines || p.linee || p.linee_produzione || ""; if(Array.isArray(raw)) return raw.map(x=>String(x||"").trim()).filter(Boolean); if(!raw) return []; try{ const parsed=JSON.parse(raw); if(Array.isArray(parsed)) return parsed.map(x=>String(x||"").trim()).filter(Boolean); }catch(_){} return String(raw).split(/[;,]/).map(x=>x.trim()).filter(Boolean); }
-  function canUseLine(line){ if(!line) return true; if(state.isAdmin || state.isSuperUser) return true; const allowed=allowedLines(); if(!allowed.length) return true; return allowed.some(l=>norm(l)===norm(line)); }
-  function canEdit(row){ return state.isAdmin || state.isSuperUser || (state.user && row && String(row.created_by)===String(state.user.id) && canUseLine(row.line_name)); }
+  function canEdit(row){ return state.isAdmin || (state.user && row && String(row.created_by)===String(state.user.id)); }
   function formatDateIT(iso){ if(!iso) return "-"; const p=String(iso).split("-"); return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : iso; }
   function getFirst(row, keys, fallback=""){ for(const k of keys){ if(row && row[k] !== undefined && row[k] !== null && row[k] !== "") return row[k]; } return fallback; }
   function eachDate(start,end){ const dates=[]; const s=new Date(start+"T00:00:00"); const e=new Date(end+"T00:00:00"); if(Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return dates; for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){ dates.push(d.toISOString().slice(0,10)); if(dates.length>366) break; } return dates; }
@@ -4208,7 +4169,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if(dash) dash.classList.remove("hidden");
     if(scrollToDashboard && dash && typeof dash.scrollIntoView === "function") dash.scrollIntoView({behavior:"smooth", block:"start"});
   }
-  async function profile(){ if(!client) return; const s=await client.auth.getSession(); state.user=s&&s.data&&s.data.session?s.data.session.user:null; if(!state.user){ state.profile=null; state.isAdmin=false; state.isSuperUser=false; return; } const r=await client.from("app_users").select("*").eq("user_id",state.user.id).maybeSingle(); state.profile=r.data||{role:"user",can_manage_operators:false,is_active:true}; state.isAdmin=admin(state.profile); state.isSuperUser=superUser(state.profile); }
+  async function profile(){ if(!client) return; const s=await client.auth.getSession(); state.user=s&&s.data&&s.data.session?s.data.session.user:null; if(!state.user){ state.profile=null; state.isAdmin=false; return; } const r=await client.from("app_users").select("user_id,email,role,can_manage_operators,is_active").eq("user_id",state.user.id).maybeSingle(); state.profile=r.data||{role:"user",can_manage_operators:false,is_active:true}; state.isAdmin=admin(state.profile); }
   function reveal(){ const b=$("openPlannedAbsencesBtn"); if(b) b.classList.toggle("hidden", !state.user); }
   function view(){ ["homeView","attendanceView","operatorsAdminView","attendanceAdminView","plannedAbsencesView"].forEach(id=>{ const el=$(id); if(el) el.classList.toggle("hidden", id!=="plannedAbsencesView"); }); }
   function mapOperator(row){
@@ -4221,9 +4182,9 @@ document.addEventListener("DOMContentLoaded", () => {
     return { id, name, line:String(line||"").trim(), idOperatore:String(idOp||"").trim(), standardHours, fteProgrammabili:fteProg, label:name+(idOp?" | ID: "+idOp:"")+(line?" | Linea: "+line:"") };
   }
   async function loadOperators(){ const r=await client.from("operators").select("*").order("cognome",{ascending:true}); state.operators=r.error?[]:(r.data||[]).map(mapOperator); datalist(); lines(); }
-  async function loadAbsences(){ let q=client.from("planned_absences").select("*").order("absence_date",{ascending:true}).order("operator_name",{ascending:true}); if(!state.isAdmin && !state.isSuperUser){ const allowed=allowedLines(); if(allowed.length) q=q.in("line_name",allowed); else q=q.eq("created_by",state.user.id); } const r=await q; if(r.error){ show($("plannedAbsencesMessage"),"Errore: "+r.error.message+". Controlla RLS: la tabella planned_absences deve avere Row Level Security disabilitata oppure policy complete.","error"); state.absences=[]; return; } state.absences=(r.data||[]).filter(row=>state.isAdmin || state.isSuperUser || canUseLine(row.line_name)); }
+  async function loadAbsences(){ let q=client.from("planned_absences").select("*").order("absence_date",{ascending:true}).order("operator_name",{ascending:true}); if(!state.isAdmin) q=q.eq("created_by",state.user.id); const r=await q; if(r.error){ show($("plannedAbsencesMessage"),"Errore: "+r.error.message+". Controlla RLS: la tabella planned_absences deve avere Row Level Security disabilitata oppure policy complete.","error"); state.absences=[]; return; } state.absences=r.data||[]; }
   function datalist(){ const dl=$("plannedAbsenceOperatorsList"); if(!dl) return; dl.innerHTML=state.operators.map(o=>`<option value="${esc(o.label)}"></option>`).join(""); }
-  function lines(){ const sel=$("plannedAbsenceLineFilter"); if(!sel) return; const cur=sel.value; const lineList=[...new Set(state.operators.map(o=>o.line).filter(Boolean).concat(state.absences.map(a=>a.line_name).filter(Boolean)))].filter(l=>canUseLine(l)).sort((a,b)=>a.localeCompare(b,"it")); sel.innerHTML='<option value="">Tutte le linee</option>'+lineList.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join(""); sel.value=(cur && canUseLine(cur)) ? cur : ""; }
+  function lines(){ const sel=$("plannedAbsenceLineFilter"); if(!sel) return; const cur=sel.value; const lines=[...new Set(state.operators.map(o=>o.line).filter(Boolean).concat(state.absences.map(a=>a.line_name).filter(Boolean)))].sort((a,b)=>a.localeCompare(b,"it")); sel.innerHTML='<option value="">Tutte le linee</option>'+lines.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join(""); sel.value=cur; }
   function findOp(v){ const raw=String(v||"").trim(); if(!raw) return null; const n=norm(raw); return state.operators.find(o=>o.label===raw) || state.operators.find(o=>norm(o.label).includes(n) || norm(o.name).includes(n)) || null; }
   function syncOperatorDefaults(){
     const op=findOp($("plannedAbsenceOperator")?.value || "");
@@ -4236,14 +4197,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const reason=$("plannedAbsenceReason")?.value||"ALTRO"; const notes=($("plannedAbsenceNotes")?.value||"").trim();
     if(!start) return {ok:false,msg:"Inserisci la data di inizio assenza."}; if(!end) return {ok:false,msg:"Inserisci la data di fine assenza."}; if(end < start) return {ok:false,msg:"La data finale non può essere precedente alla data iniziale."}; if(!raw) return {ok:false,msg:"Inserisci l'operatore."}; if(!Number.isFinite(hours)||hours<=0) return {ok:false,msg:"Inserisci ore assenza maggiori di zero."}; if(!Number.isFinite(standardHours)||standardHours<=0) return {ok:false,msg:"Inserisci ore standard assenze programmate maggiori di zero."};
     const dates=eachDate(start,end); if(!dates.length) return {ok:false,msg:"Periodo non valido."}; if(dates.length>366) return {ok:false,msg:"Periodo troppo lungo: massimo 366 giorni."};
-    const targetLine=op?op.line:"";
-    if(!canUseLine(targetLine)) return {ok:false,msg:"Non sei autorizzato a inserire assenze programmate per questa linea."};
-    const base={operator_id:op?op.id:null,operator_name:op?op.name:raw,line_name:targetLine,hours,standard_absence_hours:standardHours,fte_absence_programmabili:fteAbs,reason,notes,created_by:state.user.id,created_by_email:state.user.email||""};
+    const base={operator_id:op?op.id:null,operator_name:op?op.name:raw,line_name:op?op.line:"",hours,standard_absence_hours:standardHours,fte_absence_programmabili:fteAbs,reason,notes,created_by:state.user.id,created_by_email:state.user.email||""};
     return {ok:true,start,end,dates,base};
   }
   function reset(){ if($("plannedAbsenceId")) $("plannedAbsenceId").value=""; if($("plannedAbsenceFormTitle")) $("plannedAbsenceFormTitle").textContent="Inserisci una nuova assenza"; if($("plannedAbsenceDate")) $("plannedAbsenceDate").value=todayIso(); if($("plannedAbsenceEndDate")) $("plannedAbsenceEndDate").value=todayIso(); if($("plannedAbsenceOperator")) $("plannedAbsenceOperator").value=""; if($("plannedAbsenceHours")) $("plannedAbsenceHours").value="8"; if($("plannedAbsenceStandardHours")) $("plannedAbsenceStandardHours").value="8"; if($("plannedAbsenceFte")) $("plannedAbsenceFte").value="1.00"; if($("plannedAbsenceReason")) $("plannedAbsenceReason").value="FERIE"; if($("plannedAbsenceNotes")) $("plannedAbsenceNotes").value=""; $("cancelPlannedAbsenceEditBtn")?.classList.add("hidden"); }
   async function save(){ hide($("plannedAbsencesMessage")); await profile(); const p=read(); if(!p.ok){ show($("plannedAbsencesMessage"),p.msg,"error"); return; } const id=$("plannedAbsenceId")?.value||""; const btn=$("savePlannedAbsenceBtn"); if(btn){btn.disabled=true;btn.textContent="Salvataggio...";} try{ let r; if(id){ const data={...p.base, absence_date:p.start, updated_at:new Date().toISOString()}; delete data.created_by; delete data.created_by_email; r=await client.from("planned_absences").update(data).eq("id",id).select(); } else { const rows=p.dates.map(d=>({...p.base,absence_date:d,updated_at:new Date().toISOString()})); r=await client.from("planned_absences").insert(rows).select(); } if(r.error) throw r.error; const count=id?1:p.dates.length; reset(); await loadAbsences(); render(); showDashboardPanel(false); show($("plannedAbsencesMessage"), count===1 ? "Assenza salvata correttamente." : `Assenza di lungo periodo salvata correttamente: ${count} giornate registrate.`, "success"); }catch(e){ show($("plannedAbsencesMessage"),e.message||"Errore salvataggio.","error"); } finally{ if(btn){btn.disabled=false;btn.textContent="Salva assenza";} } }
-  function filters(){ const from=$("plannedAbsenceFromFilter")?.value||""; const to=$("plannedAbsenceToFilter")?.value||""; const reason=$("plannedAbsenceReasonFilter")?.value||""; const line=$("plannedAbsenceLineFilter")?.value||""; const s=norm($("plannedAbsenceSearch")?.value||""); state.filtered=state.absences.filter(a=>canUseLine(a.line_name)&&(!from||a.absence_date>=from)&&(!to||a.absence_date<=to)&&(!reason||a.reason===reason)&&(!line||a.line_name===line)&&(!s||norm([a.operator_name,a.line_name,a.reason,a.notes,a.created_by_email].join(" ")).includes(s))); }
+  function filters(){ const from=$("plannedAbsenceFromFilter")?.value||""; const to=$("plannedAbsenceToFilter")?.value||""; const reason=$("plannedAbsenceReasonFilter")?.value||""; const line=$("plannedAbsenceLineFilter")?.value||""; const s=norm($("plannedAbsenceSearch")?.value||""); state.filtered=state.absences.filter(a=>(!from||a.absence_date>=from)&&(!to||a.absence_date<=to)&&(!reason||a.reason===reason)&&(!line||a.line_name===line)&&(!s||norm([a.operator_name,a.line_name,a.reason,a.notes,a.created_by_email].join(" ")).includes(s))); }
   function fill(row){ showAddPanel(true); $("plannedAbsenceId").value=row.id||""; $("plannedAbsenceFormTitle").textContent="Modifica assenza"; $("plannedAbsenceDate").value=row.absence_date||""; if($("plannedAbsenceEndDate")) $("plannedAbsenceEndDate").value=row.absence_date||""; const op=state.operators.find(o=>String(o.id)===String(row.operator_id)); $("plannedAbsenceOperator").value=op?op.label:(row.operator_name||""); $("plannedAbsenceHours").value=String(row.hours||0); if($("plannedAbsenceStandardHours")) $("plannedAbsenceStandardHours").value=String(row.standard_absence_hours || op?.standardHours || row.hours || 8); if($("plannedAbsenceFte")) $("plannedAbsenceFte").value=String(num(row.fte_absence_programmabili,calcFte(row.hours,row.standard_absence_hours || op?.standardHours || 8,op?.fteProgrammabili || 1)).toFixed(2)); $("plannedAbsenceReason").value=row.reason||"ALTRO"; $("plannedAbsenceNotes").value=row.notes||""; $("cancelPlannedAbsenceEditBtn")?.classList.remove("hidden"); window.scrollTo({top:0,behavior:"smooth"}); }
   async function clickTable(e){ const b=e.target.closest("button[data-action]"); if(!b) return; const row=state.absences.find(x=>String(x.id)===String(b.dataset.id)); if(!row) return; if(!canEdit(row)){ show($("plannedAbsencesMessage"),"Non sei autorizzato.","error"); return; } if(b.dataset.action==="edit"){ fill(row); return; } if(confirm("Eliminare questa assenza?")){ const r=await client.from("planned_absences").delete().eq("id",row.id); if(r.error) show($("plannedAbsencesMessage"),r.error.message,"error"); else { await loadAbsences(); render(); show($("plannedAbsencesMessage"),"Assenza eliminata correttamente.","success"); } } }
   function stats(){ const box=$("plannedAbsenceStats"); if(!box) return; const h=state.filtered.reduce((a,r)=>a+(num(r.hours,0)),0); const fte=state.filtered.reduce((a,r)=>a+num(r.fte_absence_programmabili,0),0); const people=new Set(state.filtered.map(r=>r.operator_name).filter(Boolean)); box.innerHTML=`<div class="summary-item"><span class="label">Giornate filtrate</span><span class="value">${state.filtered.length}</span></div><div class="summary-item"><span class="label">Ore assenza</span><span class="value">${h.toFixed(2)}</span></div><div class="summary-item"><span class="label">FTE assenti</span><span class="value">${fte.toFixed(2)}</span></div><div class="summary-item"><span class="label">Operatori coinvolti</span><span class="value">${people.size}</span></div>`; }
@@ -4336,56 +4295,4 @@ document.addEventListener("DOMContentLoaded", () => {
     if(e.target && (e.target.id === "plannedAbsenceHours" || e.target.id === "plannedAbsenceStandardHours" || e.target.id === "plannedAbsenceOperator")) setTimeout(update, 0);
   });
   document.addEventListener("DOMContentLoaded", function(){ setTimeout(update, 1200); });
-})();
-
-
-/* ===== AUTHORIZATIONS PANEL - ROLES AND LINES ===== */
-(function(){
-  "use strict";
-  const client = window.AppSupabase && window.AppSupabase.getClient ? window.AppSupabase.getClient() : null;
-  const $ = (id) => document.getElementById(id);
-  const esc = (v) => String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
-  const norm = (v) => String(v || "").trim().toUpperCase();
-  let users=[];
-  let lines=[];
-  function show(el,msg,type){ if(!el) return; el.textContent=msg; el.className="message "+(type||"info"); el.classList.remove("hidden"); }
-  function hide(el){ if(!el) return; el.textContent=""; el.className="message hidden"; }
-  function parseLines(raw){ if(Array.isArray(raw)) return raw.map(x=>String(x||"").trim()).filter(Boolean); if(!raw) return []; try{ const parsed=JSON.parse(raw); if(Array.isArray(parsed)) return parsed.map(x=>String(x||"").trim()).filter(Boolean); }catch(_){} return String(raw).split(/[;,]/).map(x=>x.trim()).filter(Boolean); }
-  function roleOf(profile){ const role=norm(profile && profile.role ? profile.role : ""); if(profile && profile.can_manage_operators===true) return "admin"; if(role==="ADMIN" || role==="SUPERADMIN") return "admin"; if(role==="SUPER_USER" || role==="SUPERUSER" || role==="SUPER UTENTE" || role==="KEY_USER") return "super_user"; return "user"; }
-  async function isAdmin(){ if(!client) return false; const session=await client.auth.getSession(); const user=session?.data?.session?.user; if(!user) return false; const res=await client.from("app_users").select("*").eq("user_id",user.id).maybeSingle(); const profile=res.data||{}; return roleOf(profile)==="admin" && profile.is_active!==false; }
-  async function refresh(){
-    if(!await isAdmin()) return;
-    const panel=$("adminAuthorizationsPanel"); if(panel) panel.classList.remove("hidden");
-    hide($("authorizationsMessage"));
-    const usersRes=await client.from("app_users").select("*").order("email",{ascending:true});
-    if(usersRes.error){ show($("authorizationsMessage"),usersRes.error.message,"error"); return; }
-    users=usersRes.data||[];
-    const opsRes=await client.from("operators").select("lineaproduzione,linea,lineaProduzione,linea_produzione");
-    lines=[...new Set((opsRes.data||[]).map(o=>o.lineaproduzione||o.linea||o.lineaProduzione||o.linea_produzione).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"it"));
-    render();
-  }
-  function render(){
-    const body=$("authorizationsBody"); if(!body) return;
-    if(!users.length){ body.innerHTML='<tr><td colspan="5"><div class="muted">Nessun utente trovato in app_users.</div></td></tr>'; return; }
-    body.innerHTML=users.map((u,idx)=>{
-      const role=roleOf(u);
-      const selected=parseLines(u.allowed_lines||u.linee_autorizzate||u.allowedLines||"");
-      const checks=lines.map(line=>`<label class="auth-line-check"><input type="checkbox" data-auth-line="${esc(line)}" ${selected.some(v=>norm(v)===norm(line))?'checked':''}> <span>${esc(line)}</span></label>`).join("");
-      return `<tr data-auth-index="${idx}"><td>${esc(u.email||"-")}</td><td><select class="auth-role-select"><option value="user" ${role==="user"?"selected":""}>User</option><option value="super_user" ${role==="super_user"?"selected":""}>Super utente</option><option value="admin" ${role==="admin"?"selected":""}>Admin</option></select></td><td><div class="auth-lines-box">${checks||'<span class="muted">Nessuna linea trovata in operators.</span>'}</div></td><td><select class="auth-active-select"><option value="true" ${u.is_active!==false?"selected":""}>Attivo</option><option value="false" ${u.is_active===false?"selected":""}>Non attivo</option></select></td><td><button class="btn btn-primary btn-small" type="button" data-save-auth="${idx}">Salva</button></td></tr>`;
-    }).join("");
-    body.querySelectorAll("button[data-save-auth]").forEach(btn=>btn.onclick=()=>save(Number(btn.dataset.saveAuth)));
-  }
-  async function save(index){
-    const row=users[index]; if(!row) return;
-    const tr=document.querySelector(`tr[data-auth-index="${index}"]`); if(!tr) return;
-    const selectedRole=tr.querySelector(".auth-role-select")?.value||"user";
-    const active=tr.querySelector(".auth-active-select")?.value!=="false";
-    const selectedLines=Array.from(tr.querySelectorAll("input[data-auth-line]:checked")).map(input=>input.dataset.authLine).filter(Boolean);
-    const payload={ role:selectedRole, can_manage_operators:selectedRole==="admin", is_active:active, allowed_lines:selectedLines };
-    const res=await client.from("app_users").update(payload).eq("user_id",row.user_id).select();
-    if(res.error){ show($("authorizationsMessage"),res.error.message + " Se la colonna allowed_lines non esiste, esegui il file SQL incluso nello ZIP.","error"); return; }
-    show($("authorizationsMessage"),"Autorizzazioni salvate correttamente.","success");
-    await refresh();
-  }
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(refresh,1200));
 })();

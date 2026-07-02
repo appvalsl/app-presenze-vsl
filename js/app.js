@@ -90,7 +90,7 @@ const InserimentoPresenzeApp = (() => {
 
   const state = {
     currentStep: 1,
-    activeMainView: "attendance",
+    activeMainView: "home",
     activeView: "setup",
     user: null,
     currentUserProfile: null,
@@ -145,6 +145,7 @@ const InserimentoPresenzeApp = (() => {
 
     dom.userBadge = document.getElementById("userBadge");
     dom.logoutBtn = document.getElementById("logoutBtn");
+    dom.openHomeBtn = document.getElementById("openHomeBtn");
     dom.openAttendanceBtn = document.getElementById("openAttendanceBtn");
     dom.openOperatorsBtn = document.getElementById("openOperatorsBtn");
     dom.openAttendanceAdminBtn = document.getElementById("openAttendanceAdminBtn");
@@ -154,6 +155,12 @@ const InserimentoPresenzeApp = (() => {
     dom.loginBtn = document.getElementById("loginBtn");
     dom.authErrors = document.getElementById("authErrors");
 
+    dom.homeView = document.getElementById("homeView");
+    dom.plannedAbsencesView = document.getElementById("plannedAbsencesView");
+    dom.homeOpenAttendanceBtn = document.getElementById("homeOpenAttendanceBtn");
+    dom.homeOpenPlannedAbsencesBtn = document.getElementById("homeOpenPlannedAbsencesBtn");
+    dom.homeOpenAttendanceAdminBtn = document.getElementById("homeOpenAttendanceAdminBtn");
+    dom.homeOpenOperatorsBtn = document.getElementById("homeOpenOperatorsBtn");
     dom.attendanceView = document.getElementById("attendanceView");
     dom.operatorsAdminView = document.getElementById("operatorsAdminView");
     dom.attendanceAdminView = document.getElementById("attendanceAdminView");
@@ -360,6 +367,44 @@ function handleResetRows() {
       dom.logoutBtn.addEventListener("click", handleLogout);
     }
 
+    if (dom.openHomeBtn) {
+      dom.openHomeBtn.addEventListener("click", () => {
+        state.activeMainView = "home";
+        hideBox(dom.globalMessage);
+        renderAll();
+      });
+    }
+    if (dom.homeOpenAttendanceBtn) {
+      dom.homeOpenAttendanceBtn.addEventListener("click", () => {
+        state.activeMainView = "attendance";
+        hideBox(dom.globalMessage);
+        renderAll();
+      });
+    }
+    if (dom.homeOpenAttendanceAdminBtn) {
+      dom.homeOpenAttendanceAdminBtn.addEventListener("click", async () => {
+        if (!canManageAttendance()) {
+          showBox(dom.globalMessage, "Non sei autorizzato a consultare le presenze.", "error");
+          return;
+        }
+        state.activeMainView = "attendanceAdmin";
+        renderPermissions();
+        renderAttendanceAdmin();
+        await loadAttendanceAdminSessions();
+        renderAll();
+      });
+    }
+    if (dom.homeOpenOperatorsBtn) {
+      dom.homeOpenOperatorsBtn.addEventListener("click", () => {
+        if (!canManageOperators()) {
+          showBox(dom.globalMessage, "Non sei autorizzato a gestire l'applicazione.", "error");
+          return;
+        }
+        state.activeMainView = "operators";
+        hideBox(dom.globalMessage);
+        renderAll();
+      });
+    }
     if (dom.openAttendanceBtn) {
       dom.openAttendanceBtn.addEventListener("click", () => {
         state.activeMainView = "attendance";
@@ -819,6 +864,9 @@ function handleResetRows() {
   function showAuthenticatedUI() {
     if (dom.authSection) dom.authSection.classList.add("hidden");
     if (dom.appSection) dom.appSection.classList.remove("hidden");
+    if (state.activeMainView === "attendance" && !state.rows.length && !state.setup.lineName) {
+      state.activeMainView = "home";
+    }
 
     if (dom.userBadge) {
       const email =
@@ -834,6 +882,7 @@ function handleResetRows() {
     }
 
     if (dom.logoutBtn) dom.logoutBtn.classList.remove("hidden");
+    if (dom.openHomeBtn) dom.openHomeBtn.classList.remove("hidden");
     if (dom.openAttendanceBtn) dom.openAttendanceBtn.classList.remove("hidden");
 
     hideBox(dom.authErrors);
@@ -851,6 +900,7 @@ function handleResetRows() {
     }
 
     if (dom.logoutBtn) dom.logoutBtn.classList.add("hidden");
+    if (dom.openHomeBtn) dom.openHomeBtn.classList.add("hidden");
     if (dom.openAttendanceBtn) dom.openAttendanceBtn.classList.add("hidden");
     if (dom.openOperatorsBtn) dom.openOperatorsBtn.classList.add("hidden");
     if (dom.openAttendanceAdminBtn) dom.openAttendanceAdminBtn.classList.add("hidden");
@@ -874,10 +924,27 @@ function handleResetRows() {
     }
 
     if (!adminAllowed && state.activeMainView === "operators") {
-      state.activeMainView = "attendance";
+      state.activeMainView = "home";
     }
     if (!attendanceAdminAllowed && state.activeMainView === "attendanceAdmin") {
-      state.activeMainView = "attendance";
+      state.activeMainView = "home";
+    }
+
+    if (dom.homeView) {
+      dom.homeView.classList.toggle("hidden", state.activeMainView !== "home");
+    }
+    if (dom.plannedAbsencesView && state.activeMainView !== "plannedAbsences") {
+      dom.plannedAbsencesView.classList.add("hidden");
+    }
+
+    document.querySelectorAll(".admin-only-card").forEach((card) => {
+      card.classList.toggle("hidden", !attendanceAdminAllowed && !adminAllowed);
+    });
+    if (dom.homeOpenAttendanceAdminBtn) {
+      dom.homeOpenAttendanceAdminBtn.classList.toggle("hidden", !attendanceAdminAllowed);
+    }
+    if (dom.homeOpenOperatorsBtn) {
+      dom.homeOpenOperatorsBtn.classList.toggle("hidden", !adminAllowed);
     }
 
     if (dom.attendanceView) {
@@ -3088,7 +3155,7 @@ function handleRowTableInteraction(event) {
     sessionStorage.removeItem(STORAGE_KEY);
 
     state.currentStep = 1;
-    state.activeMainView = "attendance";
+    state.activeMainView = "home";
     state.activeView = "setup";
     state.user = preservedUser;
     state.currentUserProfile = preservedProfile;
@@ -3191,7 +3258,7 @@ function handleRowTableInteraction(event) {
     sessionStorage.removeItem(STORAGE_KEY);
 
     state.currentStep = 1;
-    state.activeMainView = "attendance";
+    state.activeMainView = "home";
     state.activeView = "setup";
     state.user = null;
     state.currentUserProfile = null;
@@ -4053,7 +4120,22 @@ document.addEventListener("DOMContentLoaded", () => {
 })();
 
 
-/* ===== ASSENZE PROGRAMMATE - APP SEPARATA DENTRO INSERIMENTO PRESENZE ===== */
+/* ===== HOME PLANNED ABSENCES BRIDGE ===== */
+(function(){
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(function(){
+      var homeBtn=document.getElementById("homeOpenPlannedAbsencesBtn");
+      var topBtn=document.getElementById("openPlannedAbsencesBtn");
+      if(homeBtn && topBtn && !homeBtn.dataset.boundPlannedBridge){
+        homeBtn.dataset.boundPlannedBridge="1";
+        homeBtn.addEventListener("click", function(){ topBtn.click(); });
+      }
+    }, 900);
+  });
+})();
+
+
+/* ===== ASSENZE PROGRAMMATE - FRONTEND ===== */
 (function(){
   "use strict";
   const client = window.AppSupabase && window.AppSupabase.getClient ? window.AppSupabase.getClient() : null;
@@ -4063,59 +4145,30 @@ document.addEventListener("DOMContentLoaded", () => {
   const todayIso = () => new Date().toISOString().slice(0,10);
   const currentMonth = () => new Date().toISOString().slice(0,7);
   const state = { user:null, profile:null, isAdmin:false, operators:[], absences:[], filtered:[] };
-  function showBox(el,msg,type){ if(!el) return; el.textContent=msg; el.className="message "+(type||"info"); el.classList.remove("hidden"); }
-  function hideBox(el){ if(!el) return; el.textContent=""; el.className="message hidden"; }
-  function setButtonLoading(btn,loading,text){ if(!btn) return; btn.disabled=loading; btn.textContent=text; }
-  function canUse(){ return !!(client && state.user); }
-  function isAdminProfile(profile){ return !!(profile && profile.is_active !== false && (profile.can_manage_operators === true || norm(profile.role)==="ADMIN" || norm(profile.role)==="SUPERADMIN")); }
-  function canEdit(row){ return !!(state.isAdmin || (state.user && row && String(row.created_by)===String(state.user.id))); }
-  async function loadProfile(){
-    if(!client) return;
-    const session = await client.auth.getSession();
-    state.user = session && session.data && session.data.session ? session.data.session.user : null;
-    if(!state.user){ state.profile=null; state.isAdmin=false; return; }
-    const res = await client.from("app_users").select("user_id,email,role,can_manage_operators,is_active").eq("user_id", state.user.id).maybeSingle();
-    state.profile = res.data || { user_id:state.user.id, email:state.user.email || "", role:"user", can_manage_operators:false, is_active:true };
-    state.isAdmin = isAdminProfile(state.profile);
-  }
-  function revealButton(){ const btn=$("openPlannedAbsencesBtn"); if(btn) btn.classList.toggle("hidden", !state.user); }
-  function switchToPlannedAbsences(){ ["attendanceView","operatorsAdminView","attendanceAdminView","plannedAbsencesView"].forEach((id)=>{ const el=$(id); if(el) el.classList.toggle("hidden", id!=="plannedAbsencesView"); }); hideBox($("globalMessage")); }
-  function switchAwayFromPlannedAbsences(){ const view=$("plannedAbsencesView"); if(view) view.classList.add("hidden"); }
-  async function openView(){ await loadProfile(); revealButton(); if(!canUse()){ showBox($("globalMessage"), "Effettua il login per usare Assenze programmate.", "error"); return; } switchToPlannedAbsences(); await ensureDataLoaded(); renderAll(); }
-  async function ensureDataLoaded(){ await Promise.all([loadOperators(), loadAbsences()]); }
-  function mapOperator(row){ const name=[row.cognome,row.nome].filter(Boolean).join(" ").trim() || row.nome || row.cognome || "Operatore"; const id=row.id ?? null; const line=row.lineaproduzione || row.lineaProduzione || row.linea_produzione || row.linea || row.line || ""; const idOperatore=row.idoperatore || row.idOperatore || row.id_operatore || ""; return { id, name, line:String(line||"").trim(), idOperatore:String(idOperatore||"").trim(), label:name+(idOperatore?" | ID: "+idOperatore:"")+(line?" | Linea: "+line:"") }; }
-  async function loadOperators(){ if(!client) return; const res=await client.from("operators").select("*").order("cognome",{ascending:true}); if(res.error){ console.warn("Operatori non caricati per assenze programmate:",res.error.message); state.operators=[]; return; } state.operators=(res.data||[]).map(mapOperator).filter(op=>op.name); renderOperatorsDatalist(); renderLineFilter(); }
-  async function loadAbsences(){ if(!client || !state.user) return; let q=client.from("planned_absences").select("*").order("absence_date",{ascending:true}).order("operator_name",{ascending:true}); if(!state.isAdmin) q=q.eq("created_by",state.user.id); const res=await q; if(res.error){ showBox($("plannedAbsencesMessage"),"Errore caricamento assenze programmate: "+res.error.message+". Se non hai ancora creato la tabella, usa il file SQL incluso nella ZIP.","error"); state.absences=[]; return; } state.absences=res.data||[]; }
-  function bind(){
-    const openBtn=$("openPlannedAbsencesBtn"); if(openBtn && !openBtn.dataset.boundAbs){ openBtn.dataset.boundAbs="1"; openBtn.addEventListener("click",openView); }
-    ["openAttendanceBtn","openOperatorsBtn","openAttendanceAdminBtn"].forEach(id=>{ const b=$(id); if(b && !b.dataset.boundHideAbs){ b.dataset.boundHideAbs="1"; b.addEventListener("click",switchAwayFromPlannedAbsences); } });
-    const save=$("savePlannedAbsenceBtn"); if(save && !save.dataset.boundAbs){ save.dataset.boundAbs="1"; save.addEventListener("click",saveAbsence); }
-    const cancel=$("cancelPlannedAbsenceEditBtn"); if(cancel && !cancel.dataset.boundAbs){ cancel.dataset.boundAbs="1"; cancel.addEventListener("click",resetForm); }
-    const refresh=$("refreshPlannedAbsencesBtn"); if(refresh && !refresh.dataset.boundAbs){ refresh.dataset.boundAbs="1"; refresh.addEventListener("click",async()=>{ await loadProfile(); await ensureDataLoaded(); renderAll(); showBox($("plannedAbsencesMessage"),"Assenze aggiornate.","success"); }); }
-    ["plannedAbsenceFromFilter","plannedAbsenceToFilter","plannedAbsenceReasonFilter","plannedAbsenceLineFilter","plannedAbsenceSearch","plannedAbsenceMonth"].forEach(id=>{ const el=$(id); if(el && !el.dataset.boundAbs){ el.dataset.boundAbs="1"; const ev=el.tagName==="SELECT" || el.type==="date" || el.type==="month" ? "change" : "input"; el.addEventListener(ev,renderAll); } });
-    const body=$("plannedAbsencesBody"); if(body && !body.dataset.boundAbs){ body.dataset.boundAbs="1"; body.addEventListener("click",handleTableClick); }
-    const operatorInput=$("plannedAbsenceOperator"); if(operatorInput && !operatorInput.dataset.boundAbs){ operatorInput.dataset.boundAbs="1"; operatorInput.addEventListener("change",syncOperatorLineHint); }
-    if($("plannedAbsenceDate") && !$("plannedAbsenceDate").value) $("plannedAbsenceDate").value=todayIso();
-    if($("plannedAbsenceMonth") && !$("plannedAbsenceMonth").value) $("plannedAbsenceMonth").value=currentMonth();
-  }
-  function renderOperatorsDatalist(){ const list=$("plannedAbsenceOperatorsList"); if(!list) return; list.innerHTML=state.operators.map(op=>`<option value="${esc(op.label)}"></option>`).join(""); }
-  function renderLineFilter(){ const sel=$("plannedAbsenceLineFilter"); if(!sel) return; const current=sel.value; const lines=[...new Set(state.operators.map(op=>op.line).filter(Boolean).concat(state.absences.map(row=>row.line_name).filter(Boolean)))].sort((a,b)=>a.localeCompare(b,"it")); sel.innerHTML=`<option value="">Tutte le linee</option>`+lines.map(line=>`<option value="${esc(line)}">${esc(line)}</option>`).join(""); sel.value=current; }
-  function findOperatorByInput(value){ const raw=String(value||"").trim(); if(!raw) return null; let found=state.operators.find(op=>op.label===raw); if(found) return found; const n=norm(raw); return state.operators.find(op=>norm(op.label).includes(n) || norm(op.name).includes(n)) || null; }
-  function syncOperatorLineHint(){ const op=findOperatorByInput($("plannedAbsenceOperator")?.value||""); if(op && $("plannedAbsenceOperator")) $("plannedAbsenceOperator").value=op.label; }
-  function readForm(){
-    const operatorRaw=($("plannedAbsenceOperator")?.value||"").trim(); const op=findOperatorByInput(operatorRaw); const date=($("plannedAbsenceDate")?.value||"").trim(); const hours=Number(String($("plannedAbsenceHours")?.value||"0").replace(",",".")); const reason=($("plannedAbsenceReason")?.value||"ALTRO").trim(); const notes=($("plannedAbsenceNotes")?.value||"").trim();
-    if(!date) return { ok:false, message:"Inserisci la data dell'assenza." }; if(!operatorRaw) return { ok:false, message:"Inserisci o seleziona l'operatore." }; if(!Number.isFinite(hours)||hours<=0) return { ok:false, message:"Inserisci ore assenza maggiori di zero." };
-    return { ok:true, data:{ absence_date:date, operator_id:op?op.id:null, operator_name:op?op.name:operatorRaw, line_name:op?op.line:"", hours, reason, notes, created_by:state.user.id, created_by_email:state.user.email||"" } };
-  }
-  async function saveAbsence(){ hideBox($("plannedAbsencesMessage")); await loadProfile(); if(!canUse()){ showBox($("plannedAbsencesMessage"),"Sessione non valida. Effettua di nuovo il login.","error"); return; } const payload=readForm(); if(!payload.ok){ showBox($("plannedAbsencesMessage"),payload.message,"error"); return; } const id=$("plannedAbsenceId")?.value||""; const btn=$("savePlannedAbsenceBtn"); setButtonLoading(btn,true,id?"Salvataggio modifica...":"Salvataggio..."); try{ const data={...payload.data, updated_at:new Date().toISOString()}; let res; if(id){ delete data.created_by; delete data.created_by_email; res=await client.from("planned_absences").update(data).eq("id",id).select(); } else { res=await client.from("planned_absences").insert(data).select(); } if(res.error) throw res.error; resetForm(); await loadAbsences(); renderAll(); showBox($("plannedAbsencesMessage"),id?"Assenza modificata correttamente.":"Assenza salvata correttamente.","success"); } catch(error){ showBox($("plannedAbsencesMessage"),error.message||"Errore durante il salvataggio dell'assenza.","error"); } finally{ setButtonLoading(btn,false,id?"Salva modifica":"Salva assenza"); } }
-  function resetForm(){ if($("plannedAbsenceId")) $("plannedAbsenceId").value=""; if($("plannedAbsenceFormTitle")) $("plannedAbsenceFormTitle").textContent="Nuova assenza"; if($("plannedAbsenceDate")) $("plannedAbsenceDate").value=todayIso(); if($("plannedAbsenceOperator")) $("plannedAbsenceOperator").value=""; if($("plannedAbsenceHours")) $("plannedAbsenceHours").value="8"; if($("plannedAbsenceReason")) $("plannedAbsenceReason").value="FERIE"; if($("plannedAbsenceNotes")) $("plannedAbsenceNotes").value=""; if($("cancelPlannedAbsenceEditBtn")) $("cancelPlannedAbsenceEditBtn").classList.add("hidden"); if($("savePlannedAbsenceBtn")) $("savePlannedAbsenceBtn").textContent="Salva assenza"; }
-  function fillForm(row){ if(!row) return; if($("plannedAbsenceId")) $("plannedAbsenceId").value=row.id||""; if($("plannedAbsenceFormTitle")) $("plannedAbsenceFormTitle").textContent="Modifica assenza"; if($("plannedAbsenceDate")) $("plannedAbsenceDate").value=row.absence_date||""; const op=state.operators.find(item=>String(item.id)===String(row.operator_id)); if($("plannedAbsenceOperator")) $("plannedAbsenceOperator").value=op?op.label:(row.operator_name||""); if($("plannedAbsenceHours")) $("plannedAbsenceHours").value=String(row.hours||0); if($("plannedAbsenceReason")) $("plannedAbsenceReason").value=row.reason||"ALTRO"; if($("plannedAbsenceNotes")) $("plannedAbsenceNotes").value=row.notes||""; if($("cancelPlannedAbsenceEditBtn")) $("cancelPlannedAbsenceEditBtn").classList.remove("hidden"); if($("savePlannedAbsenceBtn")) $("savePlannedAbsenceBtn").textContent="Salva modifica"; window.scrollTo({top:0,behavior:"smooth"}); }
-  async function handleTableClick(event){ const btn=event.target.closest("button[data-action]"); if(!btn) return; const id=btn.dataset.id; const row=state.absences.find(item=>String(item.id)===String(id)); if(!row) return; if(btn.dataset.action==="edit"){ if(!canEdit(row)){ showBox($("plannedAbsencesMessage"),"Non sei autorizzato a modificare questa assenza.","error"); return; } fillForm(row); return; } if(btn.dataset.action==="delete"){ if(!canEdit(row)){ showBox($("plannedAbsencesMessage"),"Non sei autorizzato a eliminare questa assenza.","error"); return; } const ok=confirm("Eliminare l'assenza programmata di "+(row.operator_name||"operatore")+" del "+(row.absence_date||"")+"?"); if(!ok) return; const res=await client.from("planned_absences").delete().eq("id",id); if(res.error){ showBox($("plannedAbsencesMessage"),res.error.message,"error"); return; } await loadAbsences(); renderAll(); showBox($("plannedAbsencesMessage"),"Assenza eliminata correttamente.","success"); } }
-  function applyFilters(){ const from=$("plannedAbsenceFromFilter")?.value||""; const to=$("plannedAbsenceToFilter")?.value||""; const reason=$("plannedAbsenceReasonFilter")?.value||""; const line=$("plannedAbsenceLineFilter")?.value||""; const search=norm($("plannedAbsenceSearch")?.value||""); state.filtered=(state.absences||[]).filter(row=>{ const date=row.absence_date||""; const okFrom=!from||date>=from; const okTo=!to||date<=to; const okReason=!reason||row.reason===reason; const okLine=!line||row.line_name===line; const hay=norm([row.operator_name,row.line_name,row.reason,row.notes,row.created_by_email].join(" ")); const okSearch=!search||hay.includes(search); return okFrom&&okTo&&okReason&&okLine&&okSearch; }); }
-  function renderStats(){ const box=$("plannedAbsenceStats"); if(!box) return; const rows=state.filtered||[]; const totalHours=rows.reduce((a,r)=>a+(Number(r.hours)||0),0); const people=new Set(rows.map(r=>r.operator_name).filter(Boolean)); const adminText=state.isAdmin?"Vista admin: tutte le assenze":"Vista user: solo le tue assenze inserite"; box.innerHTML=`<div class="summary-item"><span class="label">Record filtrati</span><span class="value">${esc(rows.length)}</span></div><div class="summary-item"><span class="label">Ore assenza</span><span class="value">${esc(totalHours.toFixed(2))}</span></div><div class="summary-item"><span class="label">Operatori coinvolti</span><span class="value">${esc(people.size)}</span></div><div class="summary-item"><span class="label">Permessi</span><span class="value">${esc(adminText)}</span></div>`; }
-  function renderTable(){ const body=$("plannedAbsencesBody"); if(!body) return; const rows=state.filtered||[]; if(!rows.length){ body.innerHTML=`<tr><td colspan="8"><div class="muted">Nessuna assenza programmata trovata.</div></td></tr>`; return; } body.innerHTML=rows.map(row=>{ const editable=canEdit(row); return `<tr><td data-label="Data">${esc(row.absence_date||"-")}</td><td data-label="Operatore"><strong>${esc(row.operator_name||"-")}</strong></td><td data-label="Linea">${esc(row.line_name||"-")}</td><td data-label="Ore">${esc(Number(row.hours||0).toFixed(2))}</td><td data-label="Motivo"><span class="planned-reason-badge reason-${esc(row.reason||"ALTRO")}">${esc(row.reason||"ALTRO")}</span></td><td data-label="Note">${esc(row.notes||"-")}</td><td data-label="Inserita da"><span class="planned-owner-badge">${esc(row.created_by_email||"-")}</span></td><td data-label="Azioni"><div class="planned-actions">${editable?`<button class="btn btn-secondary btn-small" type="button" data-action="edit" data-id="${esc(row.id)}">Modifica</button><button class="btn btn-danger btn-small" type="button" data-action="delete" data-id="${esc(row.id)}">Elimina</button>`:`<span class="muted">Solo lettura</span>`}</div></td></tr>`; }).join(""); }
-  function renderCalendar(){ const box=$("plannedAbsenceCalendar"); if(!box) return; const month=$("plannedAbsenceMonth")?.value||currentMonth(); const rows=(state.absences||[]).filter(row=>String(row.absence_date||"").startsWith(month)).sort((a,b)=>String(a.absence_date).localeCompare(String(b.absence_date)) || String(a.operator_name).localeCompare(String(b.operator_name),"it")); if(!rows.length){ box.innerHTML=`<div class="planned-empty">Nessuna assenza nel mese selezionato.</div>`; return; } const groups=new Map(); rows.forEach(row=>{ const key=row.absence_date||"Senza data"; if(!groups.has(key)) groups.set(key,[]); groups.get(key).push(row); }); box.innerHTML=Array.from(groups.entries()).map(([date,items])=>`<div class="planned-day"><div class="planned-day-head"><span>${esc(date)}</span><span class="planned-day-count">${esc(items.length)} ass.</span></div><ul class="planned-day-list">${items.map(item=>`<li class="planned-day-item"><span>${esc(item.operator_name||"-")}</span><span><span class="planned-reason">${esc(item.reason||"ALTRO")}</span> - ${esc(Number(item.hours||0).toFixed(2))}h</span></li>`).join("")}</ul></div>`).join(""); }
-  function renderAll(){ renderLineFilter(); applyFilters(); renderStats(); renderTable(); renderCalendar(); }
-  async function init(){ if(!client) return; bind(); await loadProfile(); revealButton(); if(client.auth && client.auth.onAuthStateChange){ client.auth.onAuthStateChange(async()=>{ await loadProfile(); revealButton(); }); } }
-  document.addEventListener("DOMContentLoaded",()=>{ setTimeout(init,600); });
+  function show(el,msg,type){ if(!el) return; el.textContent=msg; el.className="message "+(type||"info"); el.classList.remove("hidden"); }
+  function hide(el){ if(!el) return; el.textContent=""; el.className="message hidden"; }
+  function admin(profile){ return !!(profile && profile.is_active !== false && (profile.can_manage_operators === true || norm(profile.role)==="ADMIN" || norm(profile.role)==="SUPERADMIN")); }
+  function canEdit(row){ return state.isAdmin || (state.user && row && String(row.created_by)===String(state.user.id)); }
+  async function profile(){ if(!client) return; const s=await client.auth.getSession(); state.user=s&&s.data&&s.data.session?s.data.session.user:null; if(!state.user){ state.profile=null; state.isAdmin=false; return; } const r=await client.from("app_users").select("user_id,email,role,can_manage_operators,is_active").eq("user_id",state.user.id).maybeSingle(); state.profile=r.data||{role:"user",can_manage_operators:false,is_active:true}; state.isAdmin=admin(state.profile); }
+  function reveal(){ const b=$("openPlannedAbsencesBtn"); if(b) b.classList.toggle("hidden", !state.user); }
+  function view(){ ["homeView","attendanceView","operatorsAdminView","attendanceAdminView","plannedAbsencesView"].forEach(id=>{ const el=$(id); if(el) el.classList.toggle("hidden", id!=="plannedAbsencesView"); }); }
+  function mapOperator(row){ const name=[row.cognome,row.nome].filter(Boolean).join(" ").trim() || row.nome || row.cognome || "Operatore"; const id=row.id ?? null; const line=row.lineaproduzione || row.lineaProduzione || row.linea_produzione || row.linea || row.line || ""; const idOp=row.idoperatore || row.idOperatore || row.id_operatore || ""; return { id, name, line:String(line||"").trim(), label:name+(idOp?" | ID: "+idOp:"")+(line?" | Linea: "+line:"") }; }
+  async function loadOperators(){ const r=await client.from("operators").select("*").order("cognome",{ascending:true}); state.operators=r.error?[]:(r.data||[]).map(mapOperator); datalist(); lines(); }
+  async function loadAbsences(){ let q=client.from("planned_absences").select("*").order("absence_date",{ascending:true}).order("operator_name",{ascending:true}); if(!state.isAdmin) q=q.eq("created_by",state.user.id); const r=await q; if(r.error){ show($("plannedAbsencesMessage"),"Errore: "+r.error.message+". Esegui il file SQL incluso nella ZIP se la tabella non esiste.","error"); state.absences=[]; return; } state.absences=r.data||[]; }
+  function datalist(){ const dl=$("plannedAbsenceOperatorsList"); if(!dl) return; dl.innerHTML=state.operators.map(o=>`<option value="${esc(o.label)}"></option>`).join(""); }
+  function lines(){ const sel=$("plannedAbsenceLineFilter"); if(!sel) return; const cur=sel.value; const lines=[...new Set(state.operators.map(o=>o.line).filter(Boolean).concat(state.absences.map(a=>a.line_name).filter(Boolean)))].sort((a,b)=>a.localeCompare(b,"it")); sel.innerHTML='<option value="">Tutte le linee</option>'+lines.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join(""); sel.value=cur; }
+  function findOp(v){ const raw=String(v||"").trim(); if(!raw) return null; const n=norm(raw); return state.operators.find(o=>o.label===raw) || state.operators.find(o=>norm(o.label).includes(n) || norm(o.name).includes(n)) || null; }
+  function read(){ const raw=($("plannedAbsenceOperator")?.value||"").trim(); const op=findOp(raw); const date=$("plannedAbsenceDate")?.value||""; const hours=Number(String($("plannedAbsenceHours")?.value||"0").replace(",",".")); const reason=$("plannedAbsenceReason")?.value||"ALTRO"; const notes=($("plannedAbsenceNotes")?.value||"").trim(); if(!date) return {ok:false,msg:"Inserisci la data."}; if(!raw) return {ok:false,msg:"Inserisci l'operatore."}; if(!Number.isFinite(hours)||hours<=0) return {ok:false,msg:"Inserisci ore maggiori di zero."}; return {ok:true,data:{absence_date:date,operator_id:op?op.id:null,operator_name:op?op.name:raw,line_name:op?op.line:"",hours,reason,notes,created_by:state.user.id,created_by_email:state.user.email||""}}; }
+  function reset(){ if($("plannedAbsenceId")) $("plannedAbsenceId").value=""; if($("plannedAbsenceFormTitle")) $("plannedAbsenceFormTitle").textContent="Nuova assenza"; if($("plannedAbsenceDate")) $("plannedAbsenceDate").value=todayIso(); if($("plannedAbsenceOperator")) $("plannedAbsenceOperator").value=""; if($("plannedAbsenceHours")) $("plannedAbsenceHours").value="8"; if($("plannedAbsenceReason")) $("plannedAbsenceReason").value="FERIE"; if($("plannedAbsenceNotes")) $("plannedAbsenceNotes").value=""; $("cancelPlannedAbsenceEditBtn")?.classList.add("hidden"); }
+  async function save(){ hide($("plannedAbsencesMessage")); await profile(); const p=read(); if(!p.ok){ show($("plannedAbsencesMessage"),p.msg,"error"); return; } const id=$("plannedAbsenceId")?.value||""; const btn=$("savePlannedAbsenceBtn"); if(btn){btn.disabled=true;btn.textContent="Salvataggio...";} try{ let data={...p.data,updated_at:new Date().toISOString()}; let r; if(id){ delete data.created_by; delete data.created_by_email; r=await client.from("planned_absences").update(data).eq("id",id).select(); } else { r=await client.from("planned_absences").insert(data).select(); } if(r.error) throw r.error; reset(); await loadAbsences(); render(); show($("plannedAbsencesMessage"),"Assenza salvata correttamente.","success"); }catch(e){ show($("plannedAbsencesMessage"),e.message||"Errore salvataggio.","error"); } finally{ if(btn){btn.disabled=false;btn.textContent="Salva assenza";} } }
+  function filters(){ const from=$("plannedAbsenceFromFilter")?.value||""; const to=$("plannedAbsenceToFilter")?.value||""; const reason=$("plannedAbsenceReasonFilter")?.value||""; const line=$("plannedAbsenceLineFilter")?.value||""; const s=norm($("plannedAbsenceSearch")?.value||""); state.filtered=state.absences.filter(a=>(!from||a.absence_date>=from)&&(!to||a.absence_date<=to)&&(!reason||a.reason===reason)&&(!line||a.line_name===line)&&(!s||norm([a.operator_name,a.line_name,a.reason,a.notes,a.created_by_email].join(" ")).includes(s))); }
+  function fill(row){ $("plannedAbsenceId").value=row.id||""; $("plannedAbsenceFormTitle").textContent="Modifica assenza"; $("plannedAbsenceDate").value=row.absence_date||""; const op=state.operators.find(o=>String(o.id)===String(row.operator_id)); $("plannedAbsenceOperator").value=op?op.label:(row.operator_name||""); $("plannedAbsenceHours").value=String(row.hours||0); $("plannedAbsenceReason").value=row.reason||"ALTRO"; $("plannedAbsenceNotes").value=row.notes||""; $("cancelPlannedAbsenceEditBtn")?.classList.remove("hidden"); window.scrollTo({top:0,behavior:"smooth"}); }
+  async function clickTable(e){ const b=e.target.closest("button[data-action]"); if(!b) return; const row=state.absences.find(x=>String(x.id)===String(b.dataset.id)); if(!row) return; if(!canEdit(row)){ show($("plannedAbsencesMessage"),"Non sei autorizzato.","error"); return; } if(b.dataset.action==="edit"){ fill(row); return; } if(confirm("Eliminare questa assenza?")){ const r=await client.from("planned_absences").delete().eq("id",row.id); if(r.error) show($("plannedAbsencesMessage"),r.error.message,"error"); else { await loadAbsences(); render(); } } }
+  function stats(){ const box=$("plannedAbsenceStats"); if(!box) return; const h=state.filtered.reduce((a,r)=>a+(Number(r.hours)||0),0); box.innerHTML=`<div class="summary-item"><span class="label">Record</span><span class="value">${state.filtered.length}</span></div><div class="summary-item"><span class="label">Ore</span><span class="value">${h.toFixed(2)}</span></div><div class="summary-item"><span class="label">Vista</span><span class="value">${state.isAdmin?"Admin":"User"}</span></div>`; }
+  function table(){ const body=$("plannedAbsencesBody"); if(!body) return; if(!state.filtered.length){ body.innerHTML='<tr><td colspan="8"><div class="muted">Nessuna assenza trovata.</div></td></tr>'; return; } body.innerHTML=state.filtered.map(r=>`<tr><td data-label="Data">${esc(r.absence_date||"-")}</td><td data-label="Operatore"><strong>${esc(r.operator_name||"-")}</strong></td><td data-label="Linea">${esc(r.line_name||"-")}</td><td data-label="Ore">${esc(Number(r.hours||0).toFixed(2))}</td><td data-label="Motivo"><span class="planned-reason-badge reason-${esc(r.reason||"ALTRO")}">${esc(r.reason||"ALTRO")}</span></td><td data-label="Note">${esc(r.notes||"-")}</td><td data-label="Inserita da"><span class="planned-owner-badge">${esc(r.created_by_email||"-")}</span></td><td data-label="Azioni"><div class="planned-actions">${canEdit(r)?`<button class="btn btn-secondary btn-small" data-action="edit" data-id="${esc(r.id)}">Modifica</button><button class="btn btn-danger btn-small" data-action="delete" data-id="${esc(r.id)}">Elimina</button>`:'<span class="muted">Solo lettura</span>'}</div></td></tr>`).join(""); }
+  function calendar(){ const box=$("plannedAbsenceCalendar"); if(!box) return; const m=$("plannedAbsenceMonth")?.value||currentMonth(); const rows=state.absences.filter(a=>String(a.absence_date||"").startsWith(m)); if(!rows.length){ box.innerHTML='<div class="planned-empty">Nessuna assenza nel mese.</div>'; return; } const g=new Map(); rows.forEach(r=>{ const d=r.absence_date||"Senza data"; if(!g.has(d)) g.set(d,[]); g.get(d).push(r); }); box.innerHTML=[...g.entries()].map(([d,items])=>`<div class="planned-day"><div class="planned-day-head"><span>${esc(d)}</span><span class="planned-day-count">${items.length}</span></div><ul class="planned-day-list">${items.map(i=>`<li class="planned-day-item"><span>${esc(i.operator_name||"-")}</span><span>${esc(i.reason||"ALTRO")} - ${esc(Number(i.hours||0).toFixed(2))}h</span></li>`).join("")}</ul></div>`).join(""); }
+  function render(){ lines(); filters(); stats(); table(); calendar(); }
+  async function open(){ await profile(); reveal(); if(!state.user){ show($("globalMessage"),"Effettua il login.","error"); return; } view(); if(!$("plannedAbsenceDate").value) $("plannedAbsenceDate").value=todayIso(); if(!$("plannedAbsenceMonth").value) $("plannedAbsenceMonth").value=currentMonth(); await loadOperators(); await loadAbsences(); render(); }
+  function bind(){ const top=$("openPlannedAbsencesBtn"); if(top&&!top.dataset.boundAbs){ top.dataset.boundAbs="1"; top.addEventListener("click",open); } const home=$("homeOpenPlannedAbsencesBtn"); if(home&&!home.dataset.boundAbs){ home.dataset.boundAbs="1"; home.addEventListener("click",open); } const saveBtn=$("savePlannedAbsenceBtn"); if(saveBtn&&!saveBtn.dataset.boundAbs){ saveBtn.dataset.boundAbs="1"; saveBtn.addEventListener("click",save); } const cancel=$("cancelPlannedAbsenceEditBtn"); if(cancel&&!cancel.dataset.boundAbs){ cancel.dataset.boundAbs="1"; cancel.addEventListener("click",reset); } const refresh=$("refreshPlannedAbsencesBtn"); if(refresh&&!refresh.dataset.boundAbs){ refresh.dataset.boundAbs="1"; refresh.addEventListener("click",async()=>{ await loadAbsences(); render(); }); } ["plannedAbsenceFromFilter","plannedAbsenceToFilter","plannedAbsenceReasonFilter","plannedAbsenceLineFilter","plannedAbsenceSearch","plannedAbsenceMonth"].forEach(id=>{ const el=$(id); if(el&&!el.dataset.boundAbs){ el.dataset.boundAbs="1"; el.addEventListener(el.tagName==="SELECT"||el.type==="date"||el.type==="month"?"change":"input",render); } }); const body=$("plannedAbsencesBody"); if(body&&!body.dataset.boundAbs){ body.dataset.boundAbs="1"; body.addEventListener("click",clickTable); } }
+  document.addEventListener("DOMContentLoaded", function(){ setTimeout(async()=>{ bind(); await profile(); reveal(); }, 1000); });
 })();
